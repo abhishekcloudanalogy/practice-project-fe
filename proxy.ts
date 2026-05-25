@@ -32,5 +32,5 @@ export default withAuth(
 
 
 export const config = {
-    matcher : ["/((?!_next/static|_next/iamge|favicon.ico|public/).*)"]
-} 
+    matcher: ["/((?!_next/static|_next/image|_next/webpack-hmr|favicon.ico|.*\\.svg|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.ico).*)"]
+}

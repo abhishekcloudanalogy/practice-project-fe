@@ -1,6 +1,6 @@
 import { DefaultSession } from "next-auth";
 
-// export type AuthMode = 'login' | 'signup';
+export type AuthMode = 'login' | 'signup';
 
 // export interface AppSession extends DefaultSession {
 //   user: DefaultSession["user"] & {
