@@ -137,9 +137,9 @@ import { login } from "../api/auth.api";
 // };
 
 export const authOptions: NextAuthOptions = {
-  pages : {
-    signIn : "/login",
-    error : "/login",
+  pages: {
+    signIn: "/login",
+    error: "/random",
   },
   providers: [
     CredentialsProvider({
@@ -156,7 +156,7 @@ export const authOptions: NextAuthOptions = {
 
         try {
           // api call and db call
-          const res = await login({email : credentials.email , password : credentials.password})
+          const res = await login({ email: credentials.email, password: credentials.password })
           return null;
         } catch (error) {
           return null;
@@ -177,18 +177,24 @@ export const authOptions: NextAuthOptions = {
   ],
 
   callbacks: {
-    async jwt({token,user}) {
-      return {};
+    async jwt({ token, user, account }) {
+      console.log(user)
+      if (user) token.user = user;
+      if (account) token.accessToken = (account as any).access_token;
+      return token;
     },
 
     async session({ session, token }) {
+      session.user = token.user as any;
+      (session as any).accessToken = token.accessToken;
       return session;
     },
   },
+
   session: {
     strategy: "jwt",
-    maxAge : 30*24*60*60
+    maxAge: 30 * 24 * 60 * 60
   },
-  secret : process.env.NEXTAUTH_SECRET,
-  
+  secret: process.env.NEXTAUTH_SECRET,
+
 };

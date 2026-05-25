@@ -23,8 +23,8 @@ const SignupForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleOAuthSignIn = (provider: "google" | "Microsoft") => {
-    signIn(provider, { callbackUrl: "/" });
+  const handleOAuthSignIn = (provider: "google" | "azure-ad") => {
+    signIn(provider, { callbackUrl: "/dashboard" });
   };
 
   const handleSubmit = async (values: SignupValues) => {
@@ -89,7 +89,7 @@ const SignupForm = () => {
           icon={
             <img src="/mslogo.svg" alt="Microsoft" width={18} height={18} />
           }
-          onClick={() => handleOAuthSignIn("Microsoft")}
+          onClick={() => handleOAuthSignIn("azure-ad")}
         >
           Continue with Microsoft
         </Button>
