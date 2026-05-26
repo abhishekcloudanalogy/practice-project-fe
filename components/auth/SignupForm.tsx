@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
@@ -11,6 +10,7 @@ import Input from "@/components/common/Input";
 import Form from "@/components/common/Form";
 import { LockOutlined } from "@/components/common/antd/icons";
 import api from "@/lib/axios/axios";
+import { signup } from "@/lib/api/auth.api";
 
 type SignupValues = {
   name: string;
@@ -19,7 +19,6 @@ type SignupValues = {
 };
 
 const SignupForm = () => {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +31,7 @@ const SignupForm = () => {
     setError(null);
 
     try {
-      const res = await api.post("/api/users/signup", {
+      const res = await signup( {
         name: values.name,
         email: values.email,
         password: values.password,
@@ -46,8 +45,10 @@ const SignupForm = () => {
         redirect: true,
         email: values.email,
         password: values.password,
-        callbackUrl: "/",
+        callbackUrl: "/dashboard",
       });
+
+        
     } catch (err: any) {
       const message =
         err?.response?.data?.message || "Signup failed. Please try again.";
