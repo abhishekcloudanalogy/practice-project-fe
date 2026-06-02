@@ -39,6 +39,9 @@ const Navbar = () => {
         </Link>
 
         <div className="flex w-full flex-col gap-3 sm:ml-auto sm:w-auto sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+           <Button variant= "secondary" href="/contact" className="w-full sm:w-auto">
+            Contact Us
+          </Button>
           {isLoggedIn ? (
             <Button variant="auth" className="w-full sm:w-auto" onClick={handleLogout}>
               Logout
