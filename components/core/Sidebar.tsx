@@ -4,10 +4,10 @@ import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import {
-  CloseOutlined,
+  ArrowLeftOutlined,
   FileTextOutlined,
   HomeOutlined,
-  MenuOutlined,
+  ArrowRightOutlined,
   RiseOutlined,
   ShoppingOutlined,
   TeamOutlined,
@@ -60,7 +60,14 @@ const Sidebar = () => {
   }, [pathname])
 
   return (
-    <SidebarShell $collapsed={collapsed}>
+    <SidebarShell
+      $collapsed={collapsed}
+      collapsed={collapsed}
+      collapsible
+      collapsedWidth={92}
+      width={288}
+      trigger={null}
+    >
       <SidebarHeader $collapsed={collapsed}>
         <BrandBlock $collapsed={collapsed}>
           {!collapsed && <BrandMark>PP</BrandMark>}
@@ -76,8 +83,9 @@ const Sidebar = () => {
           type="button"
           onClick={() => setCollapsed((value) => !value)}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          $collapsed={collapsed}
         >
-          {collapsed ? <MenuOutlined /> : <CloseOutlined />}
+          {collapsed ? <ArrowRightOutlined /> : <ArrowLeftOutlined />}
         </ToggleButton>
       </SidebarHeader>
 

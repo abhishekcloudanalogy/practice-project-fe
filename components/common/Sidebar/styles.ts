@@ -2,8 +2,10 @@
 
 import Link from 'next/link'
 import styled from 'styled-components'
+import Layout from '@/components/common/antd/layout'
+import type { SidebarProps } from './types'
 
-export const SidebarShell = styled.aside<{ $collapsed: boolean }>`
+export const SidebarShell = styled(Layout.Sider)<SidebarProps>`
 	display: flex;
 	position: fixed;
 	top: var(--navbar-height);
@@ -68,7 +70,7 @@ export const BrandSubtitle = styled.div`
 	color: #64748b;
 `
 
-export const ToggleButton = styled.button`
+export const ToggleButton = styled.button<{ $collapsed: boolean }>`
 	display: inline-flex;
 	height: 40px;
 	width: 40px;
@@ -83,6 +85,11 @@ export const ToggleButton = styled.button`
 		transform 0.2s ease,
 		background 0.2s ease,
 		border-color 0.2s ease;
+
+	& > svg {
+		transition: transform 0.18s ease, opacity 0.12s ease;
+		transform: rotate(0deg);
+	}
 
 	&:hover {
 		transform: translateY(-1px);
