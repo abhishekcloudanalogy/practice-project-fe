@@ -8,8 +8,13 @@ export const signup = async (data: { name: string; email: string; password: stri
 
 export const login = async (data: { email: string; password: string }) => {
   const res = await api.post("/api/users/login", data);
-  return res.data?.data?.user ?? null;
+
+  return {
+    ...res.data?.data?.user,
+    accessToken: res.data?.data?.token  ?? null,
+  };
 };
+
 
 export const logout = async () => {
   const res = await api.post("/api/users/logout");
@@ -46,26 +51,24 @@ type OAuthPayload = {
 };
 
 export const oauth = async ({ user, account, providerAccountId }: OAuthPayload) => {
-  try {
-    await api.post(
-      "/api/users/oauth",
-      {
-        provider: account.provider,
-        providerAccountId,
-        email: user.email,
-        name: user.name,
-        image: user.image,
+  const res = await api.post(
+    "/api/users/oauth",
+    {
+      provider: account.provider,
+      providerAccountId,
+      email: user.email,
+      name: user.name,
+      image: user.image,
+    },
+    {
+      headers: {
+        "x-internal-secret": process.env.INTERNAL_AUTH_SECRET,
       },
-      {
-        headers: {
-          "x-internal-secret": process.env.INTERNAL_AUTH_SECRET,
-        },
-      }
-    );
+    }
+  );
 
-    return true;
-  } catch (error) {
-    console.error("OAuth API Error:", error);
-    return false;
-  }
+  return {
+    ...res.data?.data?.user,
+    accessToken: res.data?.data?.token ?? null,
+  };
 };

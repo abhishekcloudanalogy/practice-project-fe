@@ -67,9 +67,9 @@ const LoginForm = () => {
 	}
 
 	return (
-		<div className="flex h-full w-full flex-col gap-4 text-slate-900 lg:min-h-[calc(100dvh-6rem)] lg:justify-center lg:gap-6 lg:py-8">
-			<div className="space-y-1.5 text-center">
-				<div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#7c3aed,#d946ef)] text-white shadow-[0_12px_28px_rgba(124,58,237,0.34)]"><LockOutlined className="text-lg" /></div>
+		<div className="flex h-full min-h-0 w-full flex-col gap-2 text-slate-900 lg:justify-center lg:gap-3 lg:py-4">
+			<div className="space-y-1 text-center">
+				<div className="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#7c3aed,#d946ef)] text-white shadow-[0_10px_24px_rgba(124,58,237,0.28)]"><LockOutlined className="text-base" /></div>
 
 				<div className="space-y-1">
 					<Typography.Title level={2} className="mb-0! text-[1.65rem]! font-semibold! text-slate-900! sm:text-[1.8rem]!" >Welcome back</Typography.Title>
@@ -111,7 +111,7 @@ const LoginForm = () => {
 				</p>
 			)}
 
-			<div className="flex flex-col gap-4 lg:gap-6">
+			<div className="flex flex-col gap-3 lg:gap-4">
 				<Form <LoginFormValues>
 					form={form}
 					layout="vertical"
@@ -120,7 +120,7 @@ const LoginForm = () => {
 					initialValues={{ remember: false }}
 					className="w-full"
 				>
-					<div className="space-y-2.5">
+					<div className="space-y-2">
 					<Form.Item
 						label={<span className="text-[13px] font-medium text-slate-700">Email address</span>}
 						name="email"
@@ -184,7 +184,7 @@ const LoginForm = () => {
 						type="primary"
 						htmlType="submit"
 						loading={loading}
-						className="mt-2 h-10 w-full text-[13px] font-semibold transition-all duration-300 hover:-translate-y-0.5"
+						className="mt-1 h-10 w-full text-[13px] font-semibold transition-all duration-300 hover:-translate-y-0.5"
 					>
 						Sign in
 					</Button>
