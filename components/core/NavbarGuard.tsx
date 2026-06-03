@@ -12,11 +12,16 @@ export default function NavbarGuard({ children }: Props) {
   const pathname = usePathname() ?? ''
 
   const hideOn = ['/login', '/signup']
-  const shouldHide = hideOn.includes(pathname) || pathname.startsWith('/dashboard')
+  const shouldHide = hideOn.includes(pathname);
 
   return (
     <>
-      {!shouldHide && <Navbar />}
+      {!shouldHide && (
+        <>
+          <Navbar />
+          <div className="shrink-0 pt-[var(--navbar-height)]" aria-hidden="true" />
+        </>
+      )}
       {children}
     </>
   )
