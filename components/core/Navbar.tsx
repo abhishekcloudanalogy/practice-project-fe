@@ -8,18 +8,15 @@ import { logout } from '@/lib/api/auth.api'
 
 const Navbar = () => {
   const router = useRouter()
-  const { status } = useSession()
+  const { status, data: session } = useSession()
   const isLoggedIn = status === 'authenticated'
+  const role = (session?.user as any)?.role as string | undefined
+  const isAdminRole = role === 'ADMIN' || role === 'SUPER_ADMIN'
 
   const handleLogout = async () => {
+    const token = session?.accessToken ?? ''
     await signOut({ redirect: false })
-
-    try {
-      await logout()
-    } catch (error) {
-      console.error('Logout API Error:', error)
-    }
-
+    if (token) { try { await logout(token); } catch (error) { console.error('Logout API Error:', error) } }
     router.push('/')
     router.refresh()
   }
@@ -42,16 +39,15 @@ const Navbar = () => {
             <>
               <Button
                 variant="auth"
-                href="/dashboard"
+                href={isAdminRole ? '/admin' : '/dashboard'}
                 className="w-full sm:w-auto"
               >
-                Dashboard
+                {isAdminRole ? 'Admin Panel' : 'Dashboard'}
               </Button>
               <Button variant="logout" className="w-full sm:w-auto" onClick={handleLogout}>
                 Logout
               </Button>
             </>
-
           ) : (
             <>
               <Button href="/login" variant="auth" className="w-full sm:w-auto">
