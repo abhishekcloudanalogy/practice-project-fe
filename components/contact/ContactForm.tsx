@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from 'react'
 import Button from '@/components/common/Button'
 import Form from '@/components/common/Form'
 import Input from '@/components/common/Input'
@@ -12,7 +11,10 @@ import {
 	SendOutlined,
 	UserOutlined,
 } from '@/components/common/antd/icons'
-import { createContact, type ContactPayload } from '@/lib/api/contactus.api'
+import {
+	useSubmitContactMessageMutation,
+} from '@/store/services/contact/apiSlice'
+import type { ContactMessagePayload } from '@/store/services/types'
 import {
 	FieldGrid,
 	FormDescription,
@@ -25,20 +27,17 @@ import {
 } from './ContactForm.styles'
 
 const ContactForm = () => {
-	const [form] = Form.useForm<ContactPayload>()
-	const [loading, setLoading] = useState(false)
+	const [form] = Form.useForm<ContactMessagePayload>()
+	const [submitContact, { isLoading: loading }] = useSubmitContactMessageMutation()
 
-	const handleSubmit = async (values: ContactPayload) => {
-		setLoading(true)
+	const handleSubmit = async (values: ContactMessagePayload) => {
 
 		try {
-			await createContact(values)
-			Message.success('Your message has been sent.')
+			const response = await submitContact(values).unwrap()
+			Message.success(response.message || 'Your message has been sent.')
 			form.resetFields()
 		} catch {
 			Message.error('Unable to send your message right now.')
-		} finally {
-			setLoading(false)
 		}
 	}
 
@@ -52,7 +51,7 @@ const ContactForm = () => {
 				</FormDescription>
 			</FormHeader>
 
-			<Form<ContactPayload>
+			<Form<ContactMessagePayload>
 				form={form}
 				layout="vertical"
 				requiredMark={false}
@@ -111,8 +110,7 @@ const ContactForm = () => {
 						name="primaryContact"
 						rules={[
 							{ required: true, message: 'Please enter your phone number.' },
-							{ min: 10, message: 'Primary contact must be at least 10 digits.' },
-							{ max: 15, message: 'Primary contact must be at most 15 digits.' },
+							{ pattern: /^\d{10,15}$/, message: 'Primary contact must be 10–15 digits with no spaces or symbols.' },
 						]}
 					>
 						<Input
@@ -126,7 +124,9 @@ const ContactForm = () => {
 					<Form.Item
 						label={<span className="text-[13px] font-medium text-slate-700">Secondary contact</span>}
 						name="secondaryContact"
-					>
+						rules={[
+							{ pattern: /^\d{10,15}$/, message: 'Secondary contact must be 10–15 digits with no spaces or symbols.' },
+						]}>
 						<Input
 							appearance="soft"
 							prefix={<Phone className="text-slate-400" />}

@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react'
 import {
   ArrowLeftOutlined,
   FileTextOutlined,
+  FilePdfOutlined,
   HomeOutlined,
   ArrowRightOutlined,
   RiseOutlined,
@@ -34,6 +35,7 @@ import type { SidebarItem } from '@/components/common/Sidebar/types'
 const sidebarItems: SidebarItem[] = [
   { key: 'home', label: 'Home', icon: <HomeOutlined />, href: '/dashboard' },
   { key: 'quote', label: 'Quote', icon: <FileTextOutlined /> },
+  { key: 'pdf', label: 'PDF Extraction', icon: <FilePdfOutlined />, href: '/pdf' },
   { key: 'accounts', label: 'Accounts', icon: <TeamOutlined /> },
   { key: 'contacts', label: 'Contacts', icon: <UserOutlined /> , href: '/contact'},
   { key: 'opportunity', label: 'Opportunity', icon: <RiseOutlined /> },
@@ -67,6 +69,10 @@ const Sidebar = () => {
 
     return 'home'
   }, [pathname])
+
+  const collapseSidebar = () => {
+    setCollapsed(true)
+  }
 
   return (
     <SidebarShell
@@ -109,6 +115,7 @@ const Sidebar = () => {
                 href={item.href}
                 $collapsed={collapsed}
                 $active={isActive}
+                onClick={collapseSidebar}
               >
                 <ItemIcon>{item.icon}</ItemIcon>
                 {!collapsed && <ItemLabel>{item.label}</ItemLabel>}
@@ -122,6 +129,7 @@ const Sidebar = () => {
               type="button"
               $collapsed={collapsed}
               $active={isActive}
+              onClick={collapseSidebar}
             >
               <ItemIcon>{item.icon}</ItemIcon>
               {!collapsed && <ItemLabel>{item.label}</ItemLabel>}

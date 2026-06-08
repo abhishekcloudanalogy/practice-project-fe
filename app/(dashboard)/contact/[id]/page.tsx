@@ -2,27 +2,20 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getContact, updateContact, deleteContact } from '@/lib/api/contact.api';
 import Button from '@/components/common/Button';
 import Form from '@/components/common/Form';
 import Input from '@/components/common/Input';
 import Message from '@/components/common/Message';
 import Card from '@/components/common/Card';
 import AntdModal from '@/components/common/antd/Modal';
+import {
+  useDeleteContactMutation,
+  useGetContactsQuery,
+  useUpdateContactMutation,
+} from '@/store/services/contact/apiSlice';
+import type { Contact } from '@/store/services/types';
 
-interface Contact {
-  id: string;
-  firstName: string;
-  lastName?: string;
-  email: string;
-  primaryContact: string;
-  secondaryContact?: string;
-  company?: string;
-  notes?: string;
-  createdAt?: string;
-}
-
-const InfoRow = ({ icon, label, value }: { icon: string; label: string; value?: string }) => {
+const InfoRow = ({ icon, label, value }: { icon: string; label: string; value?: string | null }) => {
   if (!value) return null;
   return (
     <div className="flex items-start gap-4 py-4 border-b border-gray-100 last:border-0">
@@ -45,12 +38,13 @@ const ContactDetailPage = () => {
   const params = useParams();
   const router = useRouter();
   const contactId = params?.id as string;
-  const [contact, setContact] = useState<Contact | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [form] = Form.useForm();
+  const { data: contacts = [], isLoading, error } = useGetContactsQuery();
+  const contact = contacts.find((item) => item.id === contactId) ?? null;
+	const [updateContact, { isLoading: isSaving }] = useUpdateContactMutation();
+	const [deleteContact] = useDeleteContactMutation();
 
   useEffect(() => {
     const timerId = window.setTimeout(() => {
@@ -61,40 +55,25 @@ const ContactDetailPage = () => {
   }, []);
 
   useEffect(() => {
-    if (!contactId) return;
-    const fetchContact = async () => {
-      setIsLoading(true);
-      try {
-        const response = await getContact(contactId);
-        if (response.success && response.data) {
-          const data = response.data as Contact;
-          setContact(data);
-          form.setFieldsValue(data);
-        }
-      } catch {
-        Message.error('Failed to fetch contact');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    void fetchContact();
-  }, [contactId, form]);
+    if (contact) {
+      form.setFieldsValue(contact);
+    }
+  }, [contact, form]);
+
+  useEffect(() => {
+    if (error) {
+      Message.error('Failed to fetch contact');
+    }
+  }, [error]);
 
   const handleUpdate = async (values: Partial<Contact>) => {
-    setIsSaving(true);
     try {
-      const response = await updateContact(contactId, values);
-      if (response.success) {
-        Message.success('Contact updated successfully');
-        setContact((prev) => (prev ? { ...prev, ...values } : prev));
-        setIsEditing(false);
-      } else {
-        Message.error(response.message || 'Failed to update contact');
-      }
+      const response = await updateContact({ id: contactId, body: values }).unwrap();
+      Message.success(response.message || 'Contact updated successfully');
+      setIsEditing(false);
+      router.push('/contact');
     } catch {
       Message.error('Failed to update contact');
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -107,8 +86,8 @@ const ContactDetailPage = () => {
       cancelText: 'Cancel',
       onOk: async () => {
         try {
-          await deleteContact(contactId);
-          Message.success('Contact deleted');
+          const response = await deleteContact(contactId).unwrap();
+          Message.success(response.message || 'Contact deleted');
           router.push('/contact');
         } catch {
           Message.error('Failed to delete contact');
@@ -173,10 +152,10 @@ const ContactDetailPage = () => {
         <div className="lg:col-span-1 flex flex-col gap-4 sm:gap-5">
 
           {/* Identity card */}
-          <Card className="!rounded-2xl shadow-sm border border-gray-100 overflow-hidden !p-0">
-            <div className="h-20 sm:h-24 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 rounded-t-2xl" />
+          <Card className="rounded-2xl! shadow-sm border border-gray-100 overflow-hidden p-0!">
+            <div className="h-20 sm:h-24 bg-linear-to-r from-blue-500 via-indigo-500 to-violet-500 rounded-t-2xl" />
             <div className="flex flex-col items-center -mt-10 pb-5 px-4 sm:px-6">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold ring-4 ring-white shadow-md">
+              <div className="w-20 h-20 rounded-full bg-linear-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold ring-4 ring-white shadow-md">
                 {isLoading ? '?' : initials}
               </div>
               {isLoading ? (
@@ -199,7 +178,7 @@ const ContactDetailPage = () => {
           </Card>
 
           {/* Stats */}
-          <Card className="!rounded-2xl shadow-sm border border-gray-100">
+          <Card className="rounded-2xl! shadow-sm border border-gray-100">
             <p className="text-xs text-gray-400 uppercase tracking-wider mb-4 font-semibold">Overview</p>
             {isLoading ? (
               <div className="grid grid-cols-2 gap-3">
@@ -233,7 +212,7 @@ const ContactDetailPage = () => {
 
         {/* RIGHT — Info / Edit */}
         <div className="lg:col-span-2">
-          <Card className="!rounded-2xl shadow-sm border border-gray-100 h-full">
+          <Card className="rounded-2xl! shadow-sm border border-gray-100 h-full">
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-gray-100 mb-2">
               <div>
