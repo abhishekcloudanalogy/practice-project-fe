@@ -57,7 +57,12 @@ const Page = () => {
     if (!f) return;
     try {
       const res = await uploadPdf(f).unwrap();
-      messageApi.success(res?.message ?? "PDF extracted successfully");
+      const summary = res?.data;
+      const summaryText = summary
+        ? `${summary.insertedTables} tables added, ${summary.duplicateTables} duplicate tables skipped, ${summary.insertedRows} rows inserted.`
+        : "PDF extracted successfully";
+
+      messageApi.success(res?.message ? `${res.message} ${summaryText}` : summaryText);
     } catch (err: unknown) {
       messageApi.error(getErrorMessage(err, "Failed to upload PDF"));
     }
@@ -107,7 +112,7 @@ const Page = () => {
             <p className="pdf-page-kicker">Document Intelligence</p>
             <h2 className="pdf-page-title">PDF Extraction</h2>
             <p className="pdf-page-copy">
-              Upload a PDF to extract structured rows, browse past uploads, and jump into each file’s parsed table view.
+              Upload a PDF to extract structured rows, browse past uploads, and open the merged table view for each file.
             </p>
           </div>
 
@@ -121,6 +126,7 @@ const Page = () => {
               accept="application/pdf"
               onChange={onFileChange}
               className="hidden"
+              style={{ display: "none" }}
             />
             <Button type="primary" loading={uploading} onClick={openFilePicker} className="w-full">
               Upload PDF
@@ -133,7 +139,7 @@ const Page = () => {
         <div className="pdf-list-card__header">
           <div>
             <h3 className="pdf-list-card__title">Uploaded PDFs</h3>
-            <p className="pdf-list-card__subtitle">Track the files that have already been processed and inspect their extracted tables.</p>
+            <p className="pdf-list-card__subtitle">Track processed files and open a document to see the merged table rows across uploads.</p>
           </div>
         </div>
 
