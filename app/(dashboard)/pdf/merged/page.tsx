@@ -81,6 +81,8 @@ const MergedTablesPage = () => {
               <div className="space-y-6">
                 {data.tables.map((table, index) => {
                   const tableColumns = buildColumns(table.columns);
+                  const sourcePdfDocumentId = table.sourcePdfDocumentIds[0];
+                  const sourceTableId = table.sourceTableIds?.[0];
 
                   return (
                     <section key={`${table.schemaHash}-${index}`} className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -95,8 +97,8 @@ const MergedTablesPage = () => {
                         <div className="flex flex-wrap items-center gap-2">
                           <div className="pdf-status-chip">{table.rows.length} rows</div>
                           <Button
-                            onClick={() => router.push(`/pdf/${table.sourcePdfDocumentIds[0]}`)}
-                            disabled={!table.sourcePdfDocumentIds.length}
+                            onClick={() => router.push(`/pdf/${sourcePdfDocumentId}?tableId=${sourceTableId}`)}
+                            disabled={!sourcePdfDocumentId || !sourceTableId}
                           >
                             Edit rows / clear table
                           </Button>

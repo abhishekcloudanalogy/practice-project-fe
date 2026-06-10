@@ -1,7 +1,7 @@
 "use client";
 
 import  { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeftOutlined, CloseOutlined, DeleteOutlined, EditOutlined, FilePdfOutlined, SaveOutlined } from "@/components/common/antd/icons";
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
@@ -125,10 +125,24 @@ const renderCell = (value: unknown) => {
 	return <span className="text-slate-700">{String(value)}</span>;
 };
 
+const isBlankRow = (row: EditableRow, columns: PdfColumn[]) => {
+	return columns.every((column) => {
+		const value = row[column.key];
+
+		if (value === null || value === undefined) {
+			return true;
+		}
+
+		return typeof value === "string" ? value.trim() === "" : value === "";
+	});
+};
+
 const PdfDetailsPage = () => {
 	const params = useParams<{ id: string }>();
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const pdfId = params?.id as string | undefined;
+	const selectedTableId = searchParams.get("tableId");
 
 	const { data: pdf, isLoading: loading, error } = useGetPdfByIdQuery(pdfId ?? "", {
 		skip: !pdfId,
@@ -154,7 +168,7 @@ const PdfDetailsPage = () => {
 	const [deletingRowKey, setDeletingRowKey] = useState<string | null>(null);
 	const [clearTableTargetId, setClearTableTargetId] = useState<string | null>(null);
 	const [deleteTableTargetId, setDeleteTableTargetId] = useState<string | null>(null);
-	const [deleteRowTarget, setDeleteRowTarget] = useState<{ tableId: string; rowId: string } | null>(null);
+	const [deleteRowTarget, setDeleteRowTarget] = useState<{ tableId: string; rowId: string; rowKey: string } | null>(null);
 	const [deletePdfOpen, setDeletePdfOpen] = useState(false);
 	const isPageLoading = loading || tablesLoading;
 
@@ -165,6 +179,7 @@ const PdfDetailsPage = () => {
 	}, [error, messageApi]);
 
 	const tableGroupCount = tableGroups.length;
+	const canEditTable = (tableId: string) => !selectedTableId || selectedTableId === tableId;
 
 	useEffect(() => {
 		setTableGroups(buildTableGroups(pdfTables));
@@ -178,6 +193,7 @@ const PdfDetailsPage = () => {
 
 		const tableGroup = tableGroups.find((group) => group.key === tableKey);
 		if (!tableGroup) return;
+		if (!canEditTable(tableGroup.id)) return;
 
 		const targetRow = tableGroup.rows.find((row) => row.__rowKey === rowKey);
 		if (!targetRow) return;
@@ -190,6 +206,11 @@ const PdfDetailsPage = () => {
 					return;
 				}
 			}
+		}
+
+		if (targetRow.__isNew && isBlankRow(targetRow, tableGroup.columns)) {
+			messageApi.error("Enter at least one value before creating a row.");
+			return;
 		}
 
 		setSavingRowKey(rowKey);
@@ -217,6 +238,8 @@ const PdfDetailsPage = () => {
 	};
 
 	const handleAddRow = (tableKey: string) => {
+		if (!canEditTable(tableKey)) return;
+
 		const tempKey = `new-${Date.now()}`;
 
 		setTableGroups((currentGroups) =>
@@ -310,6 +333,7 @@ const PdfDetailsPage = () => {
 
 		const tableGroup = tableGroups.find((group) => group.key === tableKey);
 		if (!tableGroup) return;
+		if (!canEditTable(tableGroup.id)) return;
 
 		const targetRow = tableGroup.rows.find((row) => row.__rowKey === rowKey);
 		if (!targetRow) return;
@@ -329,15 +353,24 @@ const PdfDetailsPage = () => {
 			return;
 		}
 
-		setDeleteRowTarget({ tableId: tableKey, rowId: rowKey });
+		setDeleteRowTarget({ tableId: tableKey, rowId: targetRow.id, rowKey });
 	};
 
 	const handleClearTable = (tableId: string) => {
+		if (!canEditTable(tableId)) return;
 		setClearTableTargetId(tableId);
 	};
 
 	const handleDeleteTable = (tableId: string) => {
+		if (!canEditTable(tableId)) return;
 		setDeleteTableTargetId(tableId);
+	};
+
+	const handleSelectTable = (tableId: string, rowKey?: string) => {
+		if (!pdfId) return;
+
+		router.push(`/pdf/${pdfId}?tableId=${tableId}`);
+		setEditingRowKey(rowKey ?? null);
 	};
 
 	const handleDeletePdf = () => {
@@ -389,15 +422,18 @@ const PdfDetailsPage = () => {
 						title="Delete row"
 						okText="Delete"
 						cancelText="Cancel"
-						okButtonProps={{ danger: true, loading: deletingRowKey === deleteRowTarget?.rowId }}
+						okButtonProps={{ danger: true, loading: deletingRowKey === deleteRowTarget?.rowKey }}
 						onOk={async () => {
 							if (!deleteRowTarget) return;
-							setDeletingRowKey(deleteRowTarget.rowId);
+							setDeletingRowKey(deleteRowTarget.rowKey);
 							try {
-								await deletePdfTableRow(deleteRowTarget).unwrap();
+								await deletePdfTableRow({
+									tableId: deleteRowTarget.tableId,
+									rowId: deleteRowTarget.rowId,
+								}).unwrap();
 								await refetchTables();
 								messageApi.success("Row deleted successfully");
-								if (editingRowKey === deleteRowTarget.rowId) {
+								if (editingRowKey === deleteRowTarget.rowKey) {
 									setEditingRowKey(null);
 								}
 								setDeleteRowTarget(null);
@@ -478,6 +514,7 @@ const PdfDetailsPage = () => {
 						) : hasStructuredData ? (
 							<div className="pdf-multi-table-list">
 								{tableGroups.map((group) => {
+									const isSelectedTable = !selectedTableId || selectedTableId === group.id;
 									const columns: any[] = group.columns.map((column) => ({
 										title: column.title,
 										dataIndex: column.key,
@@ -499,6 +536,18 @@ const PdfDetailsPage = () => {
 										}),
 										render: (_: unknown, record: EditableRow) => {
 											const isEditing = editingRowKey === record.__rowKey;
+
+											if (!isSelectedTable) {
+												return (
+													<Button
+														variant="secondary"
+														icon={<EditOutlined />}
+														onClick={() => handleSelectTable(group.id, record.__rowKey)}
+													>
+														Edit
+													</Button>
+												);
+											}
 
 											return (
 												<div className="pdf-row-actions">
@@ -536,17 +585,28 @@ const PdfDetailsPage = () => {
 														{group.rows.length} rows • {group.columns.length} columns
 													</p>
 												</div>
-												<div className="pdf-detail-actions">
-													<Button variant="secondary" size="small" onClick={() => handleAddRow(group.key)}>
-														Add row
+												{isSelectedTable ? (
+													<div className="pdf-detail-actions">
+														<Button variant="secondary" size="small" onClick={() => handleAddRow(group.key)}>
+															Add row
+														</Button>
+														<Button variant="secondary" size="small" onClick={() => handleClearTable(group.id)}>
+															Clear rows
+														</Button>
+														<Button variant="danger" size="small" onClick={() => handleDeleteTable(group.id)}>
+															Delete table
+														</Button>
+													</div>
+												) : (
+													<Button
+														variant="secondary"
+														size="small"
+														icon={<EditOutlined />}
+														onClick={() => handleSelectTable(group.id)}
+													>
+														Edit table
 													</Button>
-													<Button variant="secondary" size="small" onClick={() => handleClearTable(group.id)}>
-														Clear rows
-													</Button>
-													<Button variant="danger" size="small" onClick={() => handleDeleteTable(group.id)}>
-														Delete table
-													</Button>
-												</div>
+												)}
 											</div>
 											<div className="p-6">
 												<div className="pdf-table-shell">

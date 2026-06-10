@@ -53,6 +53,7 @@ export type MergedExtractedTable = {
 	columns: PdfColumn[]
 	rows: Record<string, any>[]
 	sourcePdfDocumentIds: string[]
+	sourceTableIds: string[]
 }
 
 export type MergedExtractedData = {
