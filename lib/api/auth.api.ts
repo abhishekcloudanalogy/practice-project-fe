@@ -46,10 +46,20 @@ export const login = async (data: { email: string; password: string }) => {
 
 
 export const logout = async (accessToken: string) => {
-  const res = await api.post("/api/users/logout", {}, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  return res.data;
+  if (!accessToken) return null;
+
+  try {
+    const res = await api.post("/api/users/logout", {}, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return res.data;
+  } catch (error) {
+    // Token already expired or invalid — local sign-out is still valid
+    if (isAxiosError(error) && error.response?.status === 401) {
+      return null;
+    }
+    throw error;
+  }
 };
 
 export const refreshToken = async (userId: string) => {

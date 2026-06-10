@@ -150,7 +150,7 @@ export default function AdminPage() {
   ];
 
   return (
-    <section>
+    <section className="w-full space-y-6 px-2 sm:px-4 lg:px-6">
       <div className="mb-4 sm:mb-6">
         <h1 className="text-xl font-semibold text-slate-900 sm:text-2xl">User Management</h1>
         <p className="mt-1 text-sm text-slate-500">Activate or deactivate users from this panel.</p>
