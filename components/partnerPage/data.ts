@@ -1,27 +1,4 @@
-import { PartnerRow } from "@/lib/api/auth.api";
-
 import type { PartnerProgramRow } from "./types";
-
-export const initialData: PartnerRow[] = [
-  {
-    Id: 1,
-    "External id": 1001,
-    "partner Name": "Microsoft",
-    "parent Partner": "Global Partners",
-    "PM Id": "PM001",
-    URL: "https://microsoft.com",
-    Email: "partner@microsoft.com",
-  },
-  {
-    Id: 2,
-    "External id": 1002,
-    "partner Name": "Google",
-    "parent Partner": "Global Partners",
-    "PM Id": "PM002",
-    URL: "https://google.com",
-    Email: "partner@google.com",
-  },
-];
 
 export const expandedDataSource: Record<number, PartnerProgramRow[]> = {
   1: [

@@ -3,7 +3,8 @@ import { useEffect } from "react";
 import Button from "@/components/common/Button";
 import Drawer from "@/components/common/Drawer";
 import Form from "@/components/common/Form";
-import { PartnerRow } from "@/lib/api/auth.api";
+import { addPartnerSchema } from "@/lib/validations/partner.schema";
+import type { PartnerRow } from "./PartnerTable";
 
 import PartnerFormFields from "./PartnerFormFields";
 import type { PartnerFormValues } from "./types";
@@ -27,12 +28,12 @@ export default function EditPartnerDrawer({
     if (!open || !partner) return;
 
     form.setFieldsValue({
-      "External id": partner["External id"],
-      "partner Name": partner["partner Name"] ?? "",
-      "parent Partner": partner["parent Partner"] ?? "",
-      "PM Id": partner["PM Id"] ?? "",
-      URL: partner.URL ?? "",
-      Email: partner.Email ?? "",
+      externalId: partner.externalId,
+      partnerName: partner.partnerName ?? "",
+      parentPartner: partner.parentPartner ?? "",
+      pmId: partner.pmId ?? "",
+      url: partner.url ?? "",
+      email: partner.email ?? "",
     });
   }, [open, partner, form]);
 
@@ -50,7 +51,24 @@ export default function EditPartnerDrawer({
       open={open}
       onClose={handleClose}
     >
-      <Form<PartnerFormValues> form={form} layout="vertical" onFinish={onSubmit} className="mt-4">
+      <Form<PartnerFormValues>
+      form={form}
+      layout="vertical"
+      onFinish={(values) => {
+        const result = addPartnerSchema.safeParse(values);
+        if (!result.success) {
+          form.setFields(
+            result.error.issues.map((issue) => ({
+              name: issue.path[0] as keyof PartnerFormValues,
+              errors: [issue.message],
+            }))
+          );
+          return;
+        }
+        onSubmit(result.data);
+      }}
+      className="mt-4"
+    >
         <PartnerFormFields />
         <div className="mt-6 flex justify-end gap-3">
           <Button variant="secondary" htmlType="button" onClick={handleClose}>

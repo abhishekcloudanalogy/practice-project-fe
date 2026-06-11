@@ -4,7 +4,6 @@ export { default as EditPartnerDrawer } from "./EditPartnerDrawer";
 export { default as PartnerModals } from "./PartnerModals";
 export { default as PartnerStats } from "./PartnerStats";
 export { default as PartnerTable } from "./PartnerTable";
-export { initialData } from "./data";
 export type {
   ModalType,
   PartnerFormValues,

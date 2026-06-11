@@ -97,12 +97,12 @@ export type UserRow = {
 
 export type PartnerRow = {
   Id: number;
-  "External id": number | null;
+  "External id": string | null;
   "partner Name": string | null;
   "parent Partner": string | null;
   "PM Id": string | null;
-  URL: string | null;
-  Email: string | null;
+  url: string | null;
+  email: string | null;
 };
 
 type OAuthPayload = {

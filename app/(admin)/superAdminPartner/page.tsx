@@ -1,38 +1,50 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   EditPartnerDrawer,
   PartnerModals,
   PartnerStats,
   PartnerTable,
-  initialData,
 } from "@/components/partnerPage";
 import type { ModalType, PartnerFormValues, ProgramFormValues } from "@/components/partnerPage";
-import { PartnerRow } from "@/lib/api/auth.api";
+import type { PartnerRow } from "@/components/partnerPage/PartnerTable";
+import { getPartners } from "@/lib/api/partner.api";
 
 export default function SuperAdminPartner() {
-  const [dataSource, setDataSource] = useState<PartnerRow[]>(initialData);
+  const [partners, setPartners] = useState<PartnerRow[]>([]);
+  const [loading, setLoading] = useState(false);
   const [modalType, setModalType] = useState<ModalType>(null);
-  const [programVerification, setProgramVerification] = useState(true);
   const [editingPartner, setEditingPartner] = useState<PartnerRow | null>(null);
 
   const isEditDrawerOpen = modalType === "edit-partner";
 
-  const partnerNameOptions = useMemo(
-    () =>
-      dataSource.map((partner) => ({
-        label: partner["partner Name"] ?? "Unknown partner",
-        value: partner["partner Name"] ?? "",
-      })),
-    [dataSource],
-  );
+  useEffect(() => {
+    const fetchPartners = async () => {
+      try {
+        setLoading(true);
+        const response = await getPartners();
+        if (response?.success) {
+          setPartners(response.data ?? []);
+        }
+      } catch (error) {
+        console.error("Error fetching partners:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPartners();
+  }, []);
+
+  const partnerNameOptions = partners.map((partner) => ({
+    label: partner.partnerName ?? "Unknown partner",
+    value: partner.partnerName ?? "",
+  }));
 
   const closeModal = () => {
     setModalType(null);
     setEditingPartner(null);
-    setProgramVerification(true);
   };
 
   const handleEditClick = (record: PartnerRow) => {
@@ -41,40 +53,41 @@ export default function SuperAdminPartner() {
   };
 
   const handleDeleteClick = (record: PartnerRow) => {
-    setDataSource((prev) => prev.filter((p) => p.Id !== record.Id));
+    setPartners((prev) => prev.filter((p) => p.id !== record.id));
   };
 
-  const handlePartnerSubmit = (values: PartnerFormValues) => {
-    console.log("Partner form submit", values);
+  const handlePartnerSubmit = (newPartner: PartnerRow) => {
+    setPartners((prev) => [newPartner, ...prev]);
     closeModal();
   };
 
   const handleEditPartnerSubmit = (values: PartnerFormValues) => {
     if (!editingPartner) return;
-    setDataSource((prev) =>
-      prev.map((p) => (p.Id === editingPartner.Id ? { ...p, ...values } : p)),
+    setPartners((prev) =>
+      prev.map((p) =>
+        p.id === editingPartner.id
+          ? { ...p, ...Object.fromEntries(Object.entries(values).filter(([, v]) => v !== undefined)) }
+          : p
+      ),
     );
     closeModal();
   };
 
-  const handleProgramSubmit = (values: ProgramFormValues) => {
-    console.log("Program form submit", { ...values, "Verification Step": programVerification });
+  const handleProgramSubmit = (_values: ProgramFormValues) => {
     closeModal();
   };
 
   const openAddPartnerModal = () => setModalType("partner");
 
-  const openAddProgramModal = () => {
-    setProgramVerification(true);
-    setModalType("program");
-  };
+  const openAddProgramModal = () => setModalType("program");
 
   return (
     <div className="w-full space-y-6 px-2 sm:px-4 lg:px-6">
       <PartnerStats />
 
       <PartnerTable
-        dataSource={dataSource}
+      loading={loading}
+        dataSource={partners}
         onEdit={handleEditClick}
         onDelete={handleDeleteClick}
         onAddPartner={openAddPartnerModal}
