@@ -7,7 +7,7 @@ import Input from "@/components/common/Input";
 import message from "@/components/common/Message";
 import { StyledPdfPage } from "@/components/pdf/PdfPage.styles";
 import {
-  useDeletePdfMutation,
+  useDeletePdfTableMutation,
   useGetUserPdfsQuery,
   useUploadPdfMutation,
 } from "@/store/services/pdf/apiSlice";
@@ -44,22 +44,12 @@ const Page = () => {
   } = useGetUserPdfsQuery();
   const showInitialLoading = listLoading && pdfs.length === 0;
   const [uploadPdf, { isLoading: uploading }] = useUploadPdfMutation();
-  const [deletePdf] = useDeletePdfMutation();
-  const extractedTableCount = pdfs.reduce((count, pdf) => {
-    const extractedData = pdf.extractedData;
+  const [deletePdfTable] = useDeletePdfTableMutation();
+  const extractedTableCount = pdfs.length;
 
-    if (extractedData && typeof extractedData === "object" && !Array.isArray(extractedData) && "tables" in extractedData && Array.isArray((extractedData as { tables?: unknown[] }).tables)) {
-      return count + (extractedData as { tables: unknown[] }).tables.length;
-    }
-
-    if (extractedData && typeof extractedData === "object" && !Array.isArray(extractedData) && "columns" in extractedData && "rows" in extractedData) {
-      return count + 1;
-    }
-
-    return count;
-  }, 0);
-
-  const latestUploadLabel = pdfs[0] ? new Date(pdfs[0].createdAt).toLocaleString() : "No uploads yet";
+  const latestUploadLabel = pdfs[0]
+    ? `${pdfs[0].title || pdfs[0].sourceFileName || "Untitled table"} • ${new Date(pdfs[0].createdAt ?? Date.now()).toLocaleString()}`
+    : "No tables yet";
 
   useEffect(() => {
     if (error) {
@@ -108,10 +98,10 @@ const Page = () => {
   const handleDelete = async (id: string) => {
     setDeletingId(id);
     try {
-      const res = await deletePdf(id).unwrap();
-      messageApi.success(res?.message ?? "PDF deleted successfully");
+      const res = await deletePdfTable(id).unwrap();
+      messageApi.success(res?.message ?? "Table deleted successfully");
     } catch (err: unknown) {
-      messageApi.error(getErrorMessage(err, "Failed to delete PDF"));
+      messageApi.error(getErrorMessage(err, "Failed to delete table"));
     } finally {
       setDeletingId(null);
     }
@@ -165,7 +155,7 @@ const Page = () => {
               <p className="pdf-page-kicker text-xs uppercase tracking-wider text-slate-400">Document Intelligence</p>
               <h2 className="pdf-page-title text-2xl font-bold mt-2">PDF Extraction</h2>
               <p className="pdf-page-copy mt-2 text-sm text-slate-600">
-                Upload a PDF to extract structured rows, browse past uploads, and open the merged table view for each file.
+                Upload a PDF to extract structured rows, browse saved tables, and open the merged table view for grouped schemas.
               </p>
             </div>
 

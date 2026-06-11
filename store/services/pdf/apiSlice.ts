@@ -1,6 +1,5 @@
 import { baseApi } from '../baseApi'
 import type {
-    PdfDocument,
     PdfTable,
     ExtractedData,
     StructuredExtractedData,
@@ -11,6 +10,8 @@ import type {
     CreatePdfTablePayload,
     UpdatePdfTablePayload,
     CreatePdfTableRowPayload,
+    BulkDeletePdfTableRowsPayload,
+    BulkDeletePdfTableRowsResponse,
     UpdatePdfTableRowPayload,
     BulkUpdatePdfTableRowsPayload,
     BulkUpdatePdfTableRowsResponse,
@@ -18,55 +19,110 @@ import type {
 
 const isSoftDeleted = (entity: { isDeleted?: boolean } | null | undefined) => Boolean(entity?.isDeleted)
 
-const filterActiveRows = (rows: PdfTable['rows']) => rows.filter((row) => !isSoftDeleted(row))
+type BackendExtractedRow = {
+    id: string
+    rowIndex?: number | null
+    rowHash?: string
+    isDeleted?: boolean
+    rowData?: Record<string, any>
+}
+
+type BackendPdfTable = PdfTable & {
+    extractedRows?: BackendExtractedRow[]
+}
+
+const normalizeTableRows = (table: BackendPdfTable): PdfTable['rows'] => {
+    if (Array.isArray(table.rows) && table.rows.length > 0) {
+        return table.rows
+    }
+
+    if (!Array.isArray(table.extractedRows)) {
+        return []
+    }
+
+    return table.extractedRows.map((row) => ({
+        ...(row.rowData ?? {}),
+        id: row.id,
+        rowIndex: row.rowIndex,
+        rowHash: row.rowHash,
+        isDeleted: row.isDeleted,
+    }))
+}
+
+const normalizeTable = (table: BackendPdfTable): PdfTable => ({
+    ...table,
+    rows: normalizeTableRows(table),
+})
+
+const normalizeTables = (tables: BackendPdfTable[] | undefined | null): PdfTable[] =>
+    (Array.isArray(tables) ? tables : []).map((table) => normalizeTable(table))
+
+const filterActiveRows = (rows: PdfTable['rows'] | undefined | null) =>
+    (Array.isArray(rows) ? rows : []).filter((row) => !isSoftDeleted(row))
 
 const filterActiveTables = (tables: PdfTable[]) =>
-    tables
+    (Array.isArray(tables) ? tables : [])
         .filter((table) => !isSoftDeleted(table))
         .map((table) => ({
             ...table,
             rows: filterActiveRows(table.rows),
         }))
 
+const filterActiveMergedTables = (tables: MergedExtractedData['tables']) =>
+    (Array.isArray(tables) ? tables : [])
+        .filter((table) => !isSoftDeleted(table as { isDeleted?: boolean }))
+        .map((table) => ({
+            ...table,
+            rows: (Array.isArray(table.rows) ? table.rows : []).filter(
+                (row) => !isSoftDeleted(row as { isDeleted?: boolean }),
+            ),
+        }))
+
+const tableListTags = (result: PdfTable[] | undefined, listId: string) =>
+    result
+        ? [
+              { type: 'Pdfs' as const, id: listId },
+              ...result.map((table) => ({ type: 'Pdfs' as const, id: table.id })),
+          ]
+        : [{ type: 'Pdfs' as const, id: listId }]
+
+const tableScopedTags = (tableId: string, result?: PdfTable | null) => [
+    { type: 'Pdfs' as const, id: `TABLES-${tableId}` },
+    { type: 'Pdfs' as const, id: `PDF-${tableId}` },
+    { type: 'Pdfs' as const, id: 'LIST' },
+    { type: 'Pdfs' as const, id: 'MERGED' },
+    ...(result?.id ? [{ type: 'Pdfs' as const, id: result.id }] : []),
+]
+
 export const pdfApi = baseApi.injectEndpoints({
     endpoints: (builder) => ({
-        getUserPdfs: builder.query<PdfDocument[], void>({
+        getUserPdfs: builder.query<PdfTable[], void>({
             query: () => 'api/pdfs',
             keepUnusedDataFor: 300,
-            transformResponse: (response: ApiResponse<PdfDocument[]>) => response.data.filter((pdf) => !isSoftDeleted(pdf)),
-            providesTags: (result) =>
-                result
-                    ? [
-                          { type: 'Pdfs' as const, id: 'LIST' },
-                          ...result.map((pdf) => ({ type: 'Pdfs' as const, id: pdf.id })),
-                      ]
-                    : [{ type: 'Pdfs' as const, id: 'LIST' }],
+            transformResponse: (response: ApiResponse<PdfTable[]>) =>
+                filterActiveTables(normalizeTables(response.data as unknown as BackendPdfTable[])),
+            providesTags: (result) => tableListTags(result, 'LIST'),
         }),
-        getPdfById: builder.query<PdfDocument, string>({
-            query: (id) => `api/pdfs/${id}`,
-            transformResponse: (response: ApiResponse<PdfDocument>) => response.data,
+        getPdfById: builder.query<PdfTable, string>({
+            query: (id) => `api/pdfs/tables/${id}`,
+            transformResponse: (response: ApiResponse<PdfTable>) =>
+                normalizeTable(response.data as unknown as BackendPdfTable),
             providesTags: (_result, _error, id) => [{ type: 'Pdfs' as const, id }],
         }),
-        getPdfTables: builder.query<PdfTable[], string>({
-            query: (id) => `api/pdfs/${id}/tables`,
+        getPdfTables: builder.query<PdfTable[], void>({
+            query: () => 'api/pdfs/tables',
             keepUnusedDataFor: 300,
-            transformResponse: (response: ApiResponse<PdfTable[]>) => filterActiveTables(response.data),
-            providesTags: (result, _error, id) =>
-                result
-                    ? [
-                          { type: 'Pdfs' as const, id: `TABLES-${id}` },
-                          { type: 'Pdfs' as const, id: `PDF-${id}` },
-                          ...result.map((table) => ({ type: 'Pdfs' as const, id: table.id })),
-                      ]
-                    : [
-                          { type: 'Pdfs' as const, id: `TABLES-${id}` },
-                          { type: 'Pdfs' as const, id: `PDF-${id}` },
-                      ],
+            transformResponse: (response: ApiResponse<PdfTable[]>) =>
+                filterActiveTables(normalizeTables(response.data as unknown as BackendPdfTable[])),
+            providesTags: (result) => tableListTags(result, 'LIST'),
         }),
         getMergedExtractedData: builder.query<MergedExtractedData, void>({
             query: () => 'api/pdfs/merged-data',
             keepUnusedDataFor: 300,
-            transformResponse: (response: ApiResponse<MergedExtractedData>) => response.data,
+            transformResponse: (response: ApiResponse<MergedExtractedData>) => ({
+                ...response.data,
+                tables: filterActiveMergedTables(response.data.tables ?? []),
+            }),
             providesTags: (result) =>
                 result
                     ? [{ type: 'Pdfs' as const, id: 'MERGED' }]
@@ -86,18 +142,12 @@ export const pdfApi = baseApi.injectEndpoints({
             invalidatesTags: [{ type: 'Pdfs' as const, id: 'LIST' }, { type: 'Pdfs' as const, id: 'MERGED' }],
         }),
         createPdfTable: builder.mutation<ApiResponse<PdfTable>, CreatePdfTablePayload>({
-            query: ({ pdfDocumentId, ...body }) => ({
-                url: `api/pdfs/${pdfDocumentId}/tables`,
+            query: (body) => ({
+                url: 'api/pdfs/tables',
                 method: 'POST',
                 body,
             }),
-            invalidatesTags: (result, _error, arg) => [
-                { type: 'Pdfs' as const, id: `TABLES-${arg.pdfDocumentId}` },
-                { type: 'Pdfs' as const, id: `PDF-${arg.pdfDocumentId}` },
-                { type: 'Pdfs' as const, id: 'LIST' },
-                { type: 'Pdfs' as const, id: 'MERGED' },
-                ...(result?.data?.id ? [{ type: 'Pdfs' as const, id: result.data.id }] : []),
-            ],
+            invalidatesTags: (result) => tableScopedTags(result?.data?.id ?? 'LIST', result?.data),
         }),
         updatePdfTable: builder.mutation<ApiResponse<PdfTable>, UpdatePdfTablePayload>({
             query: ({ tableId, ...body }) => ({
@@ -105,13 +155,7 @@ export const pdfApi = baseApi.injectEndpoints({
                 method: 'PATCH',
                 body,
             }),
-            invalidatesTags: (result, _error, arg) => [
-                { type: 'Pdfs' as const, id: result?.data?.pdfDocumentId ? `TABLES-${result.data.pdfDocumentId}` : `TABLES-${arg.tableId}` },
-                { type: 'Pdfs' as const, id: result?.data?.pdfDocumentId ? `PDF-${result.data.pdfDocumentId}` : `PDF-${arg.tableId}` },
-                { type: 'Pdfs' as const, id: 'LIST' },
-                { type: 'Pdfs' as const, id: 'MERGED' },
-                ...(result?.data?.id ? [{ type: 'Pdfs' as const, id: result.data.id }] : []),
-            ],
+            invalidatesTags: (result, _error, arg) => tableScopedTags(arg.tableId, result?.data),
         }),
         replacePdfTable: builder.mutation<ApiResponse<PdfTable>, UpdatePdfTablePayload>({
             query: ({ tableId, ...body }) => ({
@@ -119,26 +163,14 @@ export const pdfApi = baseApi.injectEndpoints({
                 method: 'PUT',
                 body,
             }),
-            invalidatesTags: (result, _error, arg) => [
-                { type: 'Pdfs' as const, id: result?.data?.pdfDocumentId ? `TABLES-${result.data.pdfDocumentId}` : `TABLES-${arg.tableId}` },
-                { type: 'Pdfs' as const, id: result?.data?.pdfDocumentId ? `PDF-${result.data.pdfDocumentId}` : `PDF-${arg.tableId}` },
-                { type: 'Pdfs' as const, id: 'LIST' },
-                { type: 'Pdfs' as const, id: 'MERGED' },
-                ...(result?.data?.id ? [{ type: 'Pdfs' as const, id: result.data.id }] : []),
-            ],
+            invalidatesTags: (result, _error, arg) => tableScopedTags(arg.tableId, result?.data),
         }),
         deletePdfTable: builder.mutation<ApiResponse<PdfTable>, string>({
             query: (tableId) => ({
                 url: `api/pdfs/tables/${tableId}`,
                 method: 'DELETE',
             }),
-            invalidatesTags: (result, _error, tableId) => [
-                { type: 'Pdfs' as const, id: result?.data?.pdfDocumentId ? `TABLES-${result.data.pdfDocumentId}` : `TABLES-${tableId}` },
-                { type: 'Pdfs' as const, id: result?.data?.pdfDocumentId ? `PDF-${result.data.pdfDocumentId}` : `PDF-${tableId}` },
-                { type: 'Pdfs' as const, id: 'LIST' },
-                { type: 'Pdfs' as const, id: 'MERGED' },
-                ...(result?.data?.id ? [{ type: 'Pdfs' as const, id: result.data.id }] : []),
-            ],
+            invalidatesTags: (result, _error, tableId) => tableScopedTags(tableId, result?.data),
         }),
         createPdfTableRow: builder.mutation<ApiResponse<Record<string, any>>, CreatePdfTableRowPayload>({
             query: ({ tableId, rowData }) => ({
@@ -146,10 +178,10 @@ export const pdfApi = baseApi.injectEndpoints({
                 method: 'POST',
                 body: { rowData },
             }),
-            invalidatesTags: (result, _error, arg) => [
-                { type: 'Pdfs' as const, id: `TABLES-${arg.tableId}` },
+            invalidatesTags: (_result, _error, arg) => [
+                { type: 'Pdfs' as const, id: arg.tableId },
+                { type: 'Pdfs' as const, id: 'LIST' },
                 { type: 'Pdfs' as const, id: 'MERGED' },
-                ...(result?.data?.pdfDocumentId ? [{ type: 'Pdfs' as const, id: `PDF-${result.data.pdfDocumentId}` }] : []),
             ],
         }),
         updatePdfTableRow: builder.mutation<ApiResponse<Record<string, any>>, UpdatePdfTableRowPayload>({
@@ -158,10 +190,10 @@ export const pdfApi = baseApi.injectEndpoints({
                 method: 'PATCH',
                 body: { rowData },
             }),
-            invalidatesTags: (result, _error, arg) => [
-                { type: 'Pdfs' as const, id: `TABLES-${arg.tableId}` },
+            invalidatesTags: (_result, _error, arg) => [
+                { type: 'Pdfs' as const, id: arg.tableId },
+                { type: 'Pdfs' as const, id: 'LIST' },
                 { type: 'Pdfs' as const, id: 'MERGED' },
-                ...(result?.data?.pdfDocumentId ? [{ type: 'Pdfs' as const, id: `PDF-${result.data.pdfDocumentId}` }] : []),
             ],
         }),
         bulkUpdateRows: builder.mutation<BulkUpdatePdfTableRowsResponse, BulkUpdatePdfTableRowsPayload>({
@@ -170,11 +202,26 @@ export const pdfApi = baseApi.injectEndpoints({
                 method: 'PATCH',
                 body: { updates },
             }),
-            invalidatesTags: (result, _error, arg) => [
-                { type: 'Pdfs' as const, id: `TABLES-${result?.table?.pdfDocumentId ?? arg.tableId}` },
+            transformResponse: (response: ApiResponse<BulkUpdatePdfTableRowsResponse>) =>
+                response.data,
+            invalidatesTags: (_result, _error, arg) => [
+                { type: 'Pdfs' as const, id: arg.tableId },
+                { type: 'Pdfs' as const, id: 'LIST' },
                 { type: 'Pdfs' as const, id: 'MERGED' },
-                ...(result?.table?.pdfDocumentId ? [{ type: 'Pdfs' as const, id: `PDF-${result.table.pdfDocumentId}` }] : []),
-                ...(result?.table?.id ? [{ type: 'Pdfs' as const, id: result.table.id }] : []),
+            ],
+        }),
+        bulkDeleteRows: builder.mutation<BulkDeletePdfTableRowsResponse, BulkDeletePdfTableRowsPayload>({
+            query: ({ tableId, rowIds }) => ({
+                url: `api/pdfs/tables/${tableId}/rows/bulk`,
+                method: 'DELETE',
+                body: { rowIds },
+            }),
+            transformResponse: (response: ApiResponse<BulkDeletePdfTableRowsResponse>) =>
+                response.data,
+            invalidatesTags: (_result, _error, arg) => [
+                { type: 'Pdfs' as const, id: arg.tableId },
+                { type: 'Pdfs' as const, id: 'LIST' },
+                { type: 'Pdfs' as const, id: 'MERGED' },
             ],
         }),
         deletePdfTableRow: builder.mutation<ApiResponse<Record<string, any>>, { tableId: string; rowId: string }>({
@@ -182,10 +229,10 @@ export const pdfApi = baseApi.injectEndpoints({
                 url: `api/pdfs/tables/${tableId}/rows/${rowId}`,
                 method: 'DELETE',
             }),
-            invalidatesTags: (result, _error, arg) => [
-                { type: 'Pdfs' as const, id: `TABLES-${arg.tableId}` },
+            invalidatesTags: (_result, _error, arg) => [
+                { type: 'Pdfs' as const, id: arg.tableId },
+                { type: 'Pdfs' as const, id: 'LIST' },
                 { type: 'Pdfs' as const, id: 'MERGED' },
-                ...(result?.data?.pdfDocumentId ? [{ type: 'Pdfs' as const, id: `PDF-${result.data.pdfDocumentId}` }] : []),
             ],
         }),
         clearPdfTableRows: builder.mutation<ApiResponse<Record<string, any>>, string>({
@@ -193,34 +240,11 @@ export const pdfApi = baseApi.injectEndpoints({
                 url: `api/pdfs/tables/${tableId}/rows`,
                 method: 'DELETE',
             }),
-            invalidatesTags: (result, _error, tableId) => [
-                { type: 'Pdfs' as const, id: `TABLES-${tableId}` },
+            invalidatesTags: (_result, _error, tableId) => [
+                { type: 'Pdfs' as const, id: tableId },
+                { type: 'Pdfs' as const, id: 'LIST' },
                 { type: 'Pdfs' as const, id: 'MERGED' },
-                ...(result?.data?.pdfDocumentId ? [{ type: 'Pdfs' as const, id: `PDF-${result.data.pdfDocumentId}` }] : []),
             ],
-        }),
-        deletePdf: builder.mutation<ApiResponse<PdfDocument>, string>({
-            query: (id) => ({
-                url: `api/pdfs/${id}`,
-                method: 'DELETE',
-            }),
-            async onQueryStarted(id, { dispatch, queryFulfilled }) {
-                const patchResult = dispatch(
-                    pdfApi.util.updateQueryData('getUserPdfs', undefined, (draft) => {
-                        const index = draft.findIndex((pdf) => pdf.id === id)
-                        if (index !== -1) {
-                            draft.splice(index, 1)
-                        }
-                    }),
-                )
-
-                try {
-                    await queryFulfilled
-                } catch {
-                    patchResult.undo()
-                }
-            },
-            invalidatesTags: (_result, _error, id) => [{ type: 'Pdfs' as const, id }],
         }),
     }),
     overrideExisting: true,
@@ -239,9 +263,9 @@ export const {
     useCreatePdfTableRowMutation,
     useUpdatePdfTableRowMutation,
     useBulkUpdateRowsMutation,
+    useBulkDeleteRowsMutation,
     useDeletePdfTableRowMutation,
     useClearPdfTableRowsMutation,
-    useDeletePdfMutation,
 } = pdfApi
 
 export const isStructuredExtractedData = (

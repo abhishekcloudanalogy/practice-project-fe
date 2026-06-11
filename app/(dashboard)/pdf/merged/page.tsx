@@ -30,6 +30,26 @@ const buildColumns = (columns: PdfColumn[]) => {
   }));
 };
 
+const formatSourceName = (sourceName: string) => {
+  return sourceName
+    .replace(/\.pdf$/i, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
+const getDisplayTableTitle = (title: string | null | undefined, sourceFileNames: string[]) => {
+  const normalizedTitle = typeof title === "string" ? title.trim() : "";
+  const genericTableTitlePattern = /^table\s+\d+$/i;
+
+  if (normalizedTitle && !genericTableTitlePattern.test(normalizedTitle)) {
+    return normalizedTitle;
+  }
+
+  const sourceFileName = sourceFileNames.find((name) => typeof name === "string" && name.trim().length > 0);
+  return sourceFileName ? formatSourceName(sourceFileName) : "Untitled table";
+};
+
 const MergedTablesPage = () => {
   const router = useRouter();
   const [messageApi, contextHolder] = message.useMessage();
@@ -81,24 +101,24 @@ const MergedTablesPage = () => {
               <div className="space-y-6">
                 {data.tables.map((table, index) => {
                   const tableColumns = buildColumns(table.columns);
-                  const sourcePdfDocumentId = table.sourcePdfDocumentIds[0];
                   const sourceTableId = table.sourceTableIds?.[0];
+                  const displayTitle = getDisplayTableTitle(table.title, table.sourceFileNames ?? []);
 
                   return (
                     <section key={`${table.schemaHash}-${index}`} className="rounded-2xl border border-slate-200 bg-white shadow-sm">
                       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-700">Table {index + 1}</p>
-                          <h3 className="mt-1 text-lg font-semibold text-slate-950">{table.title || "Untitled table"}</h3>
+                          <h3 className="mt-1 text-lg font-semibold text-slate-950">{displayTitle}</h3>
                           <p className="mt-1 text-xs text-slate-500">
-                            {table.sourcePdfDocumentIds.length} source PDF{table.sourcePdfDocumentIds.length === 1 ? "" : "s"}
+                            {table.sourceTableIds.length} source table{table.sourceTableIds.length === 1 ? "" : "s"}
                           </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           <div className="pdf-status-chip">{table.rows.length} rows</div>
                           <Button
-                            onClick={() => router.push(`/pdf/${sourcePdfDocumentId}?tableId=${sourceTableId}`)}
-                            disabled={!sourcePdfDocumentId || !sourceTableId}
+                            onClick={() => sourceTableId && router.push(`/pdf/${sourceTableId}`)}
+                            disabled={!sourceTableId}
                           >
                             Edit rows / clear table
                           </Button>

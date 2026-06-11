@@ -40,13 +40,16 @@ export type PdfTableRow = Record<string, any> & {
 
 export type PdfTable = {
 	id: string
-	pdfDocumentId: string
+	sourceFileName?: string | null
+	contentHash?: string | null
 	title?: string | null
 	schemaHash: string
 	tableHash: string
 	columns: PdfColumn[]
 	rows: PdfTableRow[]
 	isDeleted?: boolean
+	createdAt?: string
+	updatedAt?: string
 }
 
 export type MergedExtractedTable = {
@@ -54,7 +57,7 @@ export type MergedExtractedTable = {
 	schemaHash: string
 	columns: PdfColumn[]
 	rows: Record<string, any>[]
-	sourcePdfDocumentIds: string[]
+	sourceFileNames: string[]
 	sourceTableIds: string[]
 }
 
@@ -73,18 +76,7 @@ export type MultiTableExtractedData = {
 
 export type ExtractedData = StructuredExtractedData | MultiTableExtractedData | Record<string, unknown> | unknown[]
 
-export type PdfDocument = {
-	id: string
-	userId: string
-	fileName: string
-	filePath: string
-	contentHash?: string | null
-	extractedText: string
-	extractedData: ExtractedData | null
-	createdAt: string
-	updatedAt: string
-	isDeleted?: boolean
-}
+export type PdfDocument = PdfTable
 
 export type UploadPdfSummary = {
 	tableCount: number
@@ -102,10 +94,11 @@ export type UpdateExtractedDataPayload = {
 }
 
 export type CreatePdfTablePayload = {
-	pdfDocumentId: string
 	title?: string | null
 	columns: PdfColumn[]
 	rows: Record<string, any>[]
+	sourceFileName?: string | null
+	contentHash?: string | null
 }
 
 export type UpdatePdfTablePayload = {
@@ -137,6 +130,16 @@ export type BulkUpdatePdfTableRowsPayload = {
 export type BulkUpdatePdfTableRowsResponse = {
 	success: boolean
 	updatedCount: number
+	table: PdfTable
+}
+
+export type BulkDeletePdfTableRowsPayload = {
+	tableId: string
+	rowIds: string[]
+}
+
+export type BulkDeletePdfTableRowsResponse = {
+	count: number
 	table: PdfTable
 }
 

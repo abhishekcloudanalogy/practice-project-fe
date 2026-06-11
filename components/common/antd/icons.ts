@@ -1,5 +1,6 @@
 export {
 	ArrowLeftOutlined,
+	MoreOutlined,
 	PlusOutlined,
 	CloseOutlined,
 	ClockCircleOutlined,
