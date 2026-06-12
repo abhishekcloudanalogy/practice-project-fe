@@ -20,14 +20,16 @@ const Navbar = () => {
   const dashboardHref = isAdminRole ? '/admin' : '/dashboard'
 
   const handleLogout = async () => {
-    try {
-      await logout(session?.accessToken ?? '')
-    } catch (error) {
-      console.error('Logout API Error:', error)
-    } finally {
-      await signOut({ redirect: false })
+    const token = session?.accessToken ?? ''
+    if (token) {
+      try {
+        await logout(token)
+      } catch (error) {
+        console.error('Logout API Error:', error)
+      }
     }
 
+    await signOut({ redirect: false })
     router.push('/')
     router.refresh()
   }
