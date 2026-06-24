@@ -20,6 +20,7 @@ const APP_SHELL_PREFIXES = [
   "/opportunity",
   "/adminPartner",
   "/dealRegAi",
+  "/quote",
 ];
 
 export default function NavbarGuard({ children }: Props) {
