@@ -23,9 +23,9 @@ export {
 	CopyOutlined,
 	SettingOutlined,
 	CheckOutlined,
+	UploadOutlined,
 	FileTextOutlined,
 	ArrowRightOutlined,
 	InboxOutlined,
-	UploadOutlined,
 	TableOutlined,
 } from '@ant-design/icons'
