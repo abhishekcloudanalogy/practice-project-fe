@@ -13,6 +13,7 @@ export type AppButtonVariant =
   | 'icon-button-2'
   | 'soft'
   | 'ghost'
+  | 'bgclear'
   | 'dashed'
   | 'eye-button'
 
