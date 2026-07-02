@@ -50,7 +50,7 @@ import Tooltip from '@/components/common/Tooltip'
 const itemsByRole: Record<UserRole, SidebarItem[]> = {
   user: [
     { key: 'home', label: 'Home', icon: <MdHome size={20} />, href: '/dashboard' },
-    { key: 'quote', label: 'Quote', icon: <MdDescription size={20} /> },
+    { key: 'quote', label: 'HotTables', icon: <MdDescription size={20} />, href: '/hottables' },
     { key: 'pdf', label: 'PDF Extraction', icon: <FilePdfOutlined />, href: '/pdf' },
     { key: 'customers', label: 'Customers', icon: <MdGroup size={20} />, href: '/customer' },
       { key: 'opportunity', label: 'opportunity', icon: <MdTrendingUp size={20} />, href: '/opportunity' },
@@ -87,10 +87,20 @@ const Sidebar = () => {
   const sidebarItems = itemsByRole[role]
 
   useEffect(() => {
-    document.documentElement.style.setProperty(
-      '--sidebar-width',
-      collapsed ? '92px' : '288px',
-    )
+    const applySidebarWidth = () => {
+      const isMobile = window.innerWidth <= 768
+      document.documentElement.style.setProperty(
+        '--sidebar-width',
+        isMobile ? '0px' : collapsed ? '92px' : '288px',
+      )
+    }
+
+    applySidebarWidth()
+    window.addEventListener('resize', applySidebarWidth)
+
+    return () => {
+      window.removeEventListener('resize', applySidebarWidth)
+    }
   }, [collapsed])
 
   const activeKey = useMemo(() => {

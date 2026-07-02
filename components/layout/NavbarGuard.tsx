@@ -36,7 +36,7 @@ export default function NavbarGuard({ children }: Props) {
       {!hideNavbar && (
         <>
           <Navbar />
-          <div className="shrink-0 pt-[var(--navbar-height)]" aria-hidden="true" />
+          <div className="shrink-0 pt-(--navbar-height)" aria-hidden="true" />
         </>
       )}
       {children}
