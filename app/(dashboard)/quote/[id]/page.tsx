@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Button from '@/components/common/Button'
 import Message from '@/components/common/Message'
 import Modal from '@/components/common/Modal'
@@ -23,8 +23,11 @@ const getDisplayFileName = (name: string | null | undefined): string =>
 const QuoteDetailsPage = () => {
     const router = useRouter()
     const params = useParams<{ id: string }>()
+    const searchParams = useSearchParams()
     const quoteId = params?.id
-    const [activeTab, setActiveTab] = React.useState<'review' | 'profitability'>('review')
+    const [activeTab, setActiveTab] = React.useState<'review' | 'profitability'>(
+        searchParams.get('tab') === 'profitability' ? 'profitability' : 'review'
+    )
     const [pendingVerification, setPendingVerification] = React.useState<Pick<QuoteFile, 'id' | 'file_name'> | null>(null)
     const [tableActionFile, setTableActionFile] = React.useState<QuoteFile | null>(null)
     const [messageApi, contextHolder] = Message.useMessage()
@@ -51,7 +54,7 @@ const QuoteDetailsPage = () => {
         setTableActionFile(null)
     }
 
-    const handleOpenHotTablesForFile = (file: Pick<QuoteFile, 'pdf_upload_id'>) => {
+    const handleOpenHotTablesForFile = (file: Pick<QuoteFile, 'id' | 'pdf_upload_id'>) => {
         const uploadId = file.pdf_upload_id?.trim()
 
         if (!uploadId) {
@@ -60,7 +63,7 @@ const QuoteDetailsPage = () => {
         }
 
         const nextPath = quoteId
-            ? `/hottables/tables/${uploadId}?from=quote&quoteId=${encodeURIComponent(quoteId)}`
+            ? `/hottables/tables/${uploadId}?from=quote&quoteId=${encodeURIComponent(quoteId)}&quoteFileId=${encodeURIComponent(file.id)}`
             : `/hottables/tables/${uploadId}`
 
         router.push(nextPath)
@@ -274,7 +277,7 @@ const QuoteDetailsPage = () => {
                                 }
 
                                 const nextPath = quoteId
-                                    ? `/hottables/tables/${uploadId}?mode=manual&from=quote&quoteId=${encodeURIComponent(quoteId)}`
+                                    ? `/hottables/tables/${uploadId}?mode=manual&from=quote&quoteId=${encodeURIComponent(quoteId)}&quoteFileId=${encodeURIComponent(tableActionFile.id)}`
                                     : `/hottables/tables/${uploadId}?mode=manual`
 
                                 router.push(nextPath)

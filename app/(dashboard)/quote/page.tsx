@@ -18,6 +18,58 @@ import { formatQuoteNumber } from '@/utils/formatters'
 
 const { Dragger } = AntUpload
 
+const getNestedMessage = (value: unknown): string | null => {
+    if (!value || typeof value !== 'object') {
+        return null
+    }
+
+    const source = value as {
+        message?: unknown
+        error?: unknown
+    }
+
+    if (typeof source.message === 'string' && source.message.trim().length > 0) {
+        return source.message
+    }
+
+    if (typeof source.error === 'string' && source.error.trim().length > 0) {
+        return source.error
+    }
+
+    if (source.error && typeof source.error === 'object') {
+        const nested = source.error as { message?: unknown }
+        if (typeof nested.message === 'string' && nested.message.trim().length > 0) {
+            return nested.message
+        }
+    }
+
+    return null
+}
+
+const getShortRateLimitMessage = (rawMessage: string): string => {
+    void rawMessage
+    return 'Rate limit reached. Please wait a moment and try again.'
+}
+
+const isRateLimitError = (error: {
+    status?: unknown
+    originalStatus?: unknown
+    error?: unknown
+    message?: unknown
+    data?: unknown
+}) => {
+    if (error.status === 429 || error.originalStatus === 429) {
+        return true
+    }
+
+    const payloadMessage = getNestedMessage(error.data)
+    const topLevelMessage = typeof error.message === 'string' ? error.message : ''
+    const errorText = typeof error.error === 'string' ? error.error : ''
+    const combined = `${payloadMessage ?? ''} ${topLevelMessage} ${errorText}`.toLowerCase()
+
+    return combined.includes('rate limit') || combined.includes('tpm') || combined.includes('429')
+}
+
 const getErrorMessage = (error: unknown, fallback: string) => {
     if (typeof error === 'string') {
         return error
@@ -26,23 +78,28 @@ const getErrorMessage = (error: unknown, fallback: string) => {
     if (error && typeof error === 'object') {
         const maybeError = error as {
             status?: unknown
+            originalStatus?: unknown
             error?: unknown
             message?: unknown
-            data?: { message?: unknown }
+            data?: unknown
         }
 
-        const isRateLimit =
-            maybeError.status === 429
-            || (typeof maybeError.data?.message === 'string' && maybeError.data.message.toLowerCase().includes('rate limit'))
-            || (typeof maybeError.message === 'string' && maybeError.message.toLowerCase().includes('rate limit'))
-            || (typeof maybeError.error === 'string' && maybeError.error.toLowerCase().includes('429'))
+        const payloadMessage = getNestedMessage(maybeError.data)
 
-        if (isRateLimit) {
+        if (isRateLimitError(maybeError)) {
+            if (payloadMessage) {
+                return getShortRateLimitMessage(payloadMessage)
+            }
+
+            if (typeof maybeError.message === 'string' && maybeError.message.trim().length > 0) {
+                return getShortRateLimitMessage(maybeError.message)
+            }
+
             return 'Groq API rate limit exceeded. Please wait a moment and try again.'
         }
 
-        if (typeof maybeError.data?.message === 'string') {
-            return maybeError.data.message
+        if (payloadMessage) {
+            return payloadMessage
         }
 
         if (typeof maybeError.error === 'string') {
@@ -72,11 +129,15 @@ const QuotePage = () => {
         refetchOnFocus: true,
         refetchOnReconnect: true,
     })
-    const [createQuote, { isLoading: creatingQuote }] = useCreateQuoteMutation()
+    const [createQuote, { isLoading: creatingQuote, error: createQuoteError, reset: resetCreateQuoteState }] = useCreateQuoteMutation()
 
     const loading = isLoading || isFetching
+    const uploadErrorMessage = createQuoteError
+        ? getErrorMessage(createQuoteError, 'Failed to create quote')
+        : null
 
     const openImportModal = () => {
+        resetCreateQuoteState()
         setIsImportModalOpen(true)
     }
 
@@ -85,6 +146,7 @@ const QuotePage = () => {
             return
         }
 
+        resetCreateQuoteState()
         setIsImportModalOpen(false)
         setSelectedFiles([])
     }
@@ -124,6 +186,8 @@ const QuotePage = () => {
         if (files.length === 0) {
             return
         }
+
+        resetCreateQuoteState()
 
         const baseName = files[0].name.replace(/\.[^/.]+$/, '') || 'Quote'
 
@@ -211,7 +275,7 @@ const QuotePage = () => {
     ], [router])
 
     return (
-        <div className="px-2 pb-3 pt-0 sm:px-4 sm:pb-6">
+        <div className="px-2 m-7 pb-3 pt-0 sm:px-4 sm:pb-6">
             {contextHolder}
 
             <Modal
@@ -262,6 +326,12 @@ const QuotePage = () => {
                                 </Button>
                             </div>
                         ))}
+                    </div>
+                )}
+
+                {uploadErrorMessage && (
+                    <div className="mt-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                        {uploadErrorMessage}
                     </div>
                 )}
 

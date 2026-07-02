@@ -55,7 +55,7 @@ const isEmptyCellValue = (value: unknown) =>
     value === null || value === undefined || (typeof value === 'string' && (value.trim() === '' || value.trim().toUpperCase() === 'NULL'))
 
 const MANUAL_COLUMN_LABELS = Array.from({ length: 20 }, (_, index) => String.fromCharCode(65 + index))
-const MANUAL_DEFAULT_ROWS = 5
+const MANUAL_DEFAULT_ROWS = 1
 const MANUAL_MIN_HEADERS = 5
 
 const createManualTable = (uploadId: string): AiPdfTable => {
@@ -728,7 +728,7 @@ function PdfTableGrid({
                         licenseKey="non-commercial-and-evaluation"
                         enterBeginsEditing={true}
                         afterChange={(changes, source) => {
-                            if (!changes || source === 'loadData') return
+                            if (!changes || source === 'loadData' || source === 'updateData') return
                             syncRowsFromGrid()
                         }}
                         afterCreateRow={() => syncRowsFromGrid()}
@@ -1091,16 +1091,23 @@ export default function UploadDetailPage() {
     }
 
     const buildSyncPayload = (currentTables: AiPdfTable[]): AiPdfSyncPayload => ({
+        ...(isFromQuote && sourceQuoteId ? { quoteId: sourceQuoteId } : {}),
+        ...(isFromQuote && quoteFileId ? { quoteFileId } : {}),
         tables: currentTables.map((table) => ({
             ...(table.id && !table.id.startsWith('merged-') && !table.id.startsWith('manual-') ? { id: table.id } : {}),
             title: table.title || null,
             columns: table.columns,
             lineItemMapping: table.lineItemColumnMapping || {},
-            rows: table.rows.map((row, rowIndex) => ({
-                ...(row.id ? { id: row.id } : {}),
-                rowData: row.rowData,
-                rowIndex: row.rowIndex ?? rowIndex,
-            })),
+            rows: table.rows
+                .filter((row) =>
+                    !isManualMode ||
+                    Object.values(row.rowData).some((value) => !isEmptyCellValue(value))
+                )
+                .map((row, rowIndex) => ({
+                    ...(row.id ? { id: row.id } : {}),
+                    rowData: row.rowData,
+                    rowIndex: row.rowIndex ?? rowIndex,
+                })),
         })),
     })
 
@@ -1119,16 +1126,13 @@ export default function UploadDetailPage() {
 
             Message.success(`Synced successfully. `)
 
-            // Mark edit mapping as completed after successful sync
-            if (isFromQuote && !isManualMode) {
-                setHasEditMappingCompleted(true)
+            if (isFromQuote && sourceQuoteId) {
+                router.push(`/quote/${sourceQuoteId}?tab=profitability`)
+                return
             }
 
             if (isManualMode) {
                 setLastSyncedPayload(JSON.stringify(payload))
-                if (isFromQuote && sourceQuoteId) {
-                    router.push(`/quote/${sourceQuoteId}`)
-                }
                 return
             }
 
@@ -1409,7 +1413,12 @@ export default function UploadDetailPage() {
                     />
                 ) : (
                     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
-                        <QuoteFileLineItemsTable quoteId={sourceQuoteId} quoteFileId={quoteFileId} showSaveButton />
+                        <QuoteFileLineItemsTable
+                            quoteId={sourceQuoteId}
+                            quoteFileId={quoteFileId}
+                            showSaveButton
+                            onSaveComplete={() => router.push(`/quote/${sourceQuoteId}?tab=profitability`)}
+                        />
                     </div>
                 )}
             </div>

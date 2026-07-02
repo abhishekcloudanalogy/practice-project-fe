@@ -19,6 +19,7 @@ import {
     useCreateLineItemMutation,
     useUpdateLineItemMutation,
     useDeleteLineItemMutation,
+    useVerifyQuoteFileMutation,
 } from '@/store/services/quote/apiSlice'
 import type { LineItem } from '@/store/services/quote/types'
 
@@ -32,6 +33,7 @@ type Props = {
     quoteFileId: string
     showSaveButton?: boolean
     useHotTable?: boolean
+    onSaveComplete?: () => void
 }
 
 type DraftLineItem = Partial<LineItem> & {
@@ -207,6 +209,7 @@ const QuoteFileLineItemsEditableTable: React.FC<Props> = ({
     quoteFileId,
     showSaveButton = false,
     useHotTable = true,
+    onSaveComplete,
 }) => {
     const hotRef = useRef<HotTableClass>(null)
     const lastAppliedServerSnapshotKeyRef = useRef('')
@@ -222,6 +225,7 @@ const QuoteFileLineItemsEditableTable: React.FC<Props> = ({
     const [createLineItem] = useCreateLineItemMutation()
     const [updateLineItem] = useUpdateLineItemMutation()
     const [deleteLineItem] = useDeleteLineItemMutation()
+    const [verifyQuoteFile, { isLoading: isVerifying }] = useVerifyQuoteFileMutation()
 
     const serverSnapshotKey = useMemo(
         () => lineItems.map((item) => `${item.id}:${item.updatedAt}:${item.rowIndex ?? ''}`).join('|'),
@@ -250,7 +254,7 @@ const QuoteFileLineItemsEditableTable: React.FC<Props> = ({
             .map(({ item }) => item)
     }, [lineItems])
     const visibleReadonlyLineItems = useMemo(
-        () => sortedReadonlyLineItems.slice(0, VISIBLE_LINE_ITEMS_COUNT),
+        () => sortedReadonlyLineItems,
         [sortedReadonlyLineItems],
     )
     const readonlyColumns = useMemo(() => buildDynamicColumns(sortedReadonlyLineItems), [sortedReadonlyLineItems])
@@ -362,6 +366,14 @@ const QuoteFileLineItemsEditableTable: React.FC<Props> = ({
 
             await refetch()
             setIsDirty(false)
+
+            if (showSaveButton) {
+                await verifyQuoteFile({ quoteId, quoteFileId }).unwrap()
+                Message.success('Items saved and verified successfully')
+                onSaveComplete?.()
+                return
+            }
+
             Message.success('Items saved successfully')
         } catch (error) {
             Message.error(getErrorMessage(error, 'Failed to save items'))
@@ -422,7 +434,7 @@ const QuoteFileLineItemsEditableTable: React.FC<Props> = ({
     )
 
     const handleAfterChange = (changes: CellChange[] | null, source: ChangeSource) => {
-        if (!changes || source === 'loadData') return
+        if (!changes || source === 'loadData' || source === 'updateData') return
 
         setDraftRows((prev) => {
             const next = [...prev]
@@ -481,8 +493,8 @@ const QuoteFileLineItemsEditableTable: React.FC<Props> = ({
             <Button
                 type="primary"
                 onClick={handleSaveItems}
-                loading={isSavingItems}
-                disabled={loading || isSavingItems || !isDirty}
+                loading={isSavingItems || isVerifying}
+                disabled={loading || isSavingItems || isVerifying || !isDirty}
             >
                 Save Items
             </Button>
@@ -517,6 +529,7 @@ const QuoteFileLineItemsEditableTable: React.FC<Props> = ({
                 dataSource={visibleReadonlyLineItems}
                 rowKey={(record) => record.id}
                 scroll={{ x: 980 }}
+                pagination={false}
             />
         )
     }
