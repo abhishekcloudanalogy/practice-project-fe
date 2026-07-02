@@ -1,4 +1,4 @@
-import type { ButtonProps } from 'antd'
+import type { ButtonProps as AntdButtonProps } from 'antd'
 
 export type AppButtonVariant =
   | 'primary'
@@ -16,8 +16,10 @@ export type AppButtonVariant =
   | 'dashed'
   | 'eye-button'
 
-export interface AppButtonProps extends Omit<ButtonProps, 'variant'> {
-  variant?: AppButtonVariant
+export type SharedButtonVariant = AppButtonVariant | NonNullable<AntdButtonProps['variant']>
+
+export interface AppButtonProps extends Omit<AntdButtonProps, 'variant'> {
+  variant?: SharedButtonVariant
 }
 
-export type { ButtonProps }
+export type { ButtonProps } from 'antd'

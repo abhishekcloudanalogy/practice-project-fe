@@ -1,2 +1,2 @@
-export { Button as default } from 'antd'
-export type { ButtonProps } from 'antd'
+export { default } from '../Button'
+export type { AppButtonProps, AppButtonVariant, ButtonProps } from '../Button'

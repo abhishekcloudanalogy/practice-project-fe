@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 /**
  * Legacy /formBuilder route — redirects to /superAdminPartner/formBuilder
  */
-export default function FormBuilderRedirect() {
+function FormBuilderRedirectContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -21,5 +21,13 @@ export default function FormBuilderRedirect() {
         <div style={{ fontSize: 14, fontWeight: 500 }}>Redirecting…</div>
       </div>
     </div>
+  )
+}
+
+export default function FormBuilderRedirect() {
+  return (
+    <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - 80px)' }}>Redirecting…</div>}>
+      <FormBuilderRedirectContent />
+    </Suspense>
   )
 }

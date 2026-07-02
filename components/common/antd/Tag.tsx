@@ -1,11 +1,11 @@
 'use client'
 import { Tag as AntTag } from 'antd'
-import type { TagProps } from 'antd'
+import type { TagProps as AntdTagProps } from 'antd'
 
 export type TagVariant = 'default' | 'purple' | 'slate' | 'green' | 'red'
 
-interface Props extends TagProps {
-  variant?: TagVariant
+interface Props extends Omit<AntdTagProps, 'variant'> {
+  variant?: TagVariant | NonNullable<AntdTagProps['variant']>
 }
 
 const variantStyles: Record<TagVariant, React.CSSProperties> = {
@@ -17,12 +17,14 @@ const variantStyles: Record<TagVariant, React.CSSProperties> = {
 }
 
 export default function Tag({ variant = 'default', style, ...props }: Props) {
+  const resolvedVariant = typeof variant === 'string' && variant in variantStyles ? variant : 'default'
+
   return (
     <AntTag
       {...props}
-      style={{ borderRadius: 6, fontSize: 11, fontWeight: 500, ...variantStyles[variant], ...style }}
+      style={{ borderRadius: 6, fontSize: 11, fontWeight: 500, ...variantStyles[resolvedVariant as TagVariant], ...style }}
     />
   )
 }
 
-export type { TagProps }
+export type { TagProps as AntdTagProps } from 'antd'

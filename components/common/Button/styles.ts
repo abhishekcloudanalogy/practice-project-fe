@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import type { AppButtonVariant } from './types'
+import type { AppButtonVariant, SharedButtonVariant } from './types'
 import type { ButtonProps } from 'antd'
 
 const baseStyles: CSSProperties = {
@@ -151,19 +151,22 @@ const variantStyles: Record<AppButtonVariant, CSSProperties> = {
   },
 }
 
-export function getVariantStyles(variant: AppButtonVariant): CSSProperties {
-  return variantStyles[variant] ?? baseStyles
+export function getVariantStyles(variant: SharedButtonVariant | string): CSSProperties {
+  return (variantStyles as Record<string, CSSProperties>)[variant] ?? baseStyles
 }
 
-export function getAntdType(variant: AppButtonVariant): ButtonProps['type'] {
+export function getAntdType(variant: SharedButtonVariant | string): ButtonProps['type'] {
   switch (variant) {
     case 'primary':
     case 'signin':
       return 'primary'
     case 'ghost':
+    case 'text':
       return 'text'
     case 'dashed':
       return 'dashed'
+    case 'link':
+      return 'link'
     default:
       return 'default'
   }

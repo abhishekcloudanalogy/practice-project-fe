@@ -1,5 +1,5 @@
-import type { TagProps } from '@/components/common/antd/Tag'
+import type { TagProps } from 'antd'
 
 export interface AppTagProps extends Omit<TagProps, 'variant'> {
-	variant?: 'default' | 'status'
+	variant?: 'default' | 'status' | NonNullable<TagProps['variant']>
 }

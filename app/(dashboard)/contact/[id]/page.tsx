@@ -7,7 +7,7 @@ import Button from '@/components/common/antd/Button';
 import Form from '@/components/common/Form';
 import Input from '@/components/common/Input';
 import Card from '@/components/common/Card';
-import AntdModal from '@/components/common/antd/Modal';
+import { Modal as AntdModal } from 'antd';
 import {
   useDeleteContactMutation,
   useGetContactsQuery,

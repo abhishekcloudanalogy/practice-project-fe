@@ -207,7 +207,7 @@ const SignupForm = () => {
                 placeholder="Enter your password"
                 size="large"
                 autoComplete="new-password"
-                iconRender={(visible) =>
+                iconRender={(visible: boolean) =>
                   visible ? (
                     <EyeOutlined className="text-slate-400" />
                   ) : (
