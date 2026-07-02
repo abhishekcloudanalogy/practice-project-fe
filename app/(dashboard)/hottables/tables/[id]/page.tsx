@@ -24,6 +24,7 @@ import {
     useGetAiPdfUploadDetailQuery,
     useSyncAiPdfUploadMutation,
 } from '@/store/services/aiPdf/apiSlice'
+import { useVerifyQuoteFileMutation } from '@/store/services/quote/apiSlice'
 import { LINE_ITEM_FIELD_OPTIONS } from '@/store/services/aiPdf/constants'
 import type {
     AiPdfLineItemFieldOption,
@@ -37,6 +38,7 @@ import Select from '@/components/common/Select'
 import Input from '@/components/common/Input'
 import Button from '@/components/common/Button'
 import Typography from '@/components/common/Typography'
+import QuoteFileLineItemsTable from '@/components/quote/QuoteFileLineItemsTable'
 
 registerAllModules()
 const { Title, Text } = Typography
@@ -52,8 +54,8 @@ const getDisplayFileName = (name: string | null | undefined): string => (name ??
 const isEmptyCellValue = (value: unknown) =>
     value === null || value === undefined || (typeof value === 'string' && (value.trim() === '' || value.trim().toUpperCase() === 'NULL'))
 
-const MANUAL_COLUMN_LABELS = Array.from({ length: 26 }, (_, index) => String.fromCharCode(65 + index))
-const MANUAL_DEFAULT_ROWS = 15
+const MANUAL_COLUMN_LABELS = Array.from({ length: 20 }, (_, index) => String.fromCharCode(65 + index))
+const MANUAL_DEFAULT_ROWS = 5
 const MANUAL_MIN_HEADERS = 5
 
 const createManualTable = (uploadId: string): AiPdfTable => {
@@ -226,12 +228,16 @@ function PdfTableGrid({
     index,
     isMergedTable,
     showSyncColumnHeaders,
+    disableSyncColumnHeaders,
     shouldOpenUpdateColumns,
     openUpdateColumnsRequest,
+    shouldAddManualColumn,
+    openAddManualColumnRequest,
+    shouldOpenRenameManualColumn,
+    openRenameManualColumnRequest,
     onDelete,
     onRowsChange,
     onColumnsAndRowsChange,
-    onSyncColumnHeaders,
     onUpdateSingleColumnTitle,
     onUpdateColumnMappings,
     onSaveColumnMappings,
@@ -241,12 +247,16 @@ function PdfTableGrid({
     index: number
     isMergedTable: boolean
     showSyncColumnHeaders: boolean
+    disableSyncColumnHeaders: boolean
     shouldOpenUpdateColumns: boolean
     openUpdateColumnsRequest: number
+    shouldAddManualColumn: boolean
+    openAddManualColumnRequest: number
+    shouldOpenRenameManualColumn: boolean
+    openRenameManualColumnRequest: number
     onDelete: () => void
     onRowsChange: (tableId: string, rows: AiPdfTableRow[]) => void
     onColumnsAndRowsChange: (tableId: string, columns: AiPdfTable['columns'], rows: AiPdfTableRow[]) => void
-    onSyncColumnHeaders: (tableId: string) => void
     onUpdateSingleColumnTitle: (tableId: string, columnKey: string, targetField: string) => void
     onUpdateColumnMappings: (tableId: string, columns: AiPdfTable['columns'], mapping: AiPdfLineItemMapping) => void
     onSaveColumnMappings: (tableId: string, columns: AiPdfTable['columns'], mapping: AiPdfLineItemMapping) => Promise<void> | void
@@ -268,6 +278,8 @@ function PdfTableGrid({
     const [columnTitleToRename, setColumnTitleToRename] = useState('')
     const [columnMappings, setColumnMappings] = useState<Array<{ sourceColumnKey: string; targetField: string }>>([])
     const lastOpenedUpdateColumnsRequestRef = useRef(0)
+    const lastAddedManualColumnRequestRef = useRef(0)
+    const lastOpenedRenameManualColumnRequestRef = useRef(0)
 
     const colHeaders = useMemo(() => table.columns.map((c) => c.title), [table.columns])
     const columns = useMemo(() => table.columns.map((c) => ({ data: c.key })), [table.columns])
@@ -523,6 +535,28 @@ function PdfTableGrid({
         lastOpenedUpdateColumnsRequestRef.current = openUpdateColumnsRequest
         openUpdateColumnsModal()
     }, [shouldOpenUpdateColumns, openUpdateColumnsRequest])
+
+    useEffect(() => {
+        if (!shouldAddManualColumn || openAddManualColumnRequest === 0) return
+        if (lastAddedManualColumnRequestRef.current === openAddManualColumnRequest) return
+
+        lastAddedManualColumnRequestRef.current = openAddManualColumnRequest
+        insertColumnsAt(table.columns.length, 1)
+    }, [shouldAddManualColumn, openAddManualColumnRequest, table.columns.length])
+
+    useEffect(() => {
+        if (!shouldOpenRenameManualColumn || openRenameManualColumnRequest === 0) return
+        if (lastOpenedRenameManualColumnRequestRef.current === openRenameManualColumnRequest) return
+
+        lastOpenedRenameManualColumnRequestRef.current = openRenameManualColumnRequest
+        if (table.columns.length === 0) {
+            Message.error('No columns available to rename')
+            return
+        }
+
+        openRenameColumnModal(0)
+    }, [shouldOpenRenameManualColumn, openRenameManualColumnRequest, table.columns.length])
+
     const closeBulkEditModal = () => {
         setBulkEditOpen(false)
         resetBulkEditModal()
@@ -640,15 +674,9 @@ function PdfTableGrid({
     const canDeleteTable = !isMergedTable && !showSyncColumnHeaders && Object.keys(lineItemMapping).length === 0
 
     return (
-        <div className={index > 0 ? 'border-t-2 border-slate-200' : undefined}>
+        <div className={index > 0 ? 'border-t-2  border-slate-200' : undefined}>
             <div className="flex flex-col items-center justify-end gap-1 border-b border-slate-100 bg-slate-50 px-4 py- sm:px-5 lg:flex-row lg:items-center">
                 <div className="flex flex-wrap items-center justify-end gap-2 lg:flex-nowrap">
-                    {showSyncColumnHeaders && (
-                        <Button size="small" onClick={() => onSyncColumnHeaders(table.id)}>
-                            Sync Column Headers
-                        </Button>
-                    )}
-
                     <Tag icon={<TableOutlined />} className="mr-0 rounded-md border-none bg-indigo-50 text-[12px] font-semibold text-indigo-500">
                         {table.rows.length} rows
                     </Tag>
@@ -672,7 +700,7 @@ function PdfTableGrid({
                 </div>
             </div>
 
-            <div className="overflow-x-auto [&_.handsontable]:font-inherit [&_.handsontable]:text-[13px] [&_.handsontable_td]:text-[#3d3f52] [&_.handsontable_th]:bg-slate-50 [&_.handsontable_th]:text-[12px] [&_.handsontable_th]:font-semibold [&_.handsontable_th]:text-[#1d1f2b]">
+            <div className="relative z-0 w-full max-w-full overflow-x-auto overscroll-x-contain [&_.handsontable]:relative [&_.handsontable]:z-0 [&_.handsontable]:font-inherit [&_.handsontable]:text-[13px] [&_.handsontable_td]:text-[#3d3f52] [&_.handsontable_th]:bg-slate-50 [&_.handsontable_th]:text-[12px] [&_.handsontable_th]:font-semibold [&_.handsontable_th]:text-[#1d1f2b]">
                 {data.length === 0 ? (
                     <div className="flex min-h-75 items-center justify-center">
                         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={<Text className="text-slate-400">No rows in this table</Text>} />
@@ -893,12 +921,37 @@ function PdfTableGrid({
                 <Title level={5} className="mb-4">Rename Column</Title>
                 <Text className="mb-3 block text-neutral-500">Set a new header name for this manual column.</Text>
 
-                <Input
-                    placeholder="Enter column header"
-                    value={columnTitleToRename}
-                    onChange={(e) => setColumnTitleToRename(e.target.value)}
-                    onPressEnter={applyRenameColumn}
-                />
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+                    <div>
+                        <Text className="mb-2 block">Choose Column</Text>
+                        <Select
+                            size="large"
+                            placeholder="Select column"
+                            value={columnKeyToRename || undefined}
+                            onChange={(value) => {
+                                setColumnKeyToRename(value)
+                                const selectedColumn = table.columns.find((column) => column.key === value)
+                                setColumnTitleToRename(selectedColumn?.title || '')
+                            }}
+                            options={table.columns.map((column) => ({
+                                label: column.title,
+                                value: column.key,
+                            }))}
+                            style={{ width: '100%' }}
+                        />
+                    </div>
+
+                    <div>
+                        <Text className="mb-2 block">New Column Name</Text>
+                        <Input
+                            size="large"
+                            placeholder="Enter column header"
+                            value={columnTitleToRename}
+                            onChange={(e) => setColumnTitleToRename(e.target.value)}
+                            onPressEnter={applyRenameColumn}
+                        />
+                    </div>
+                </div>
 
                 <div className="mt-6 flex justify-end gap-3">
                     <Button onClick={closeRenameColumnModal}>Cancel</Button>
@@ -930,6 +983,8 @@ export default function UploadDetailPage() {
     const uploadId = params.id as string
     const mode = searchParams.get('mode')
     const isManualMode = mode === 'manual'
+    const isLineItemsMode = mode === 'line-items'
+    const quoteFileId = searchParams.get('quoteFileId')
     const from = searchParams.get('from')
     const sourceQuoteId = searchParams.get('quoteId')
     const isFromQuote = from === 'quote' && Boolean(sourceQuoteId)
@@ -937,15 +992,19 @@ export default function UploadDetailPage() {
     const backLabel = isFromQuote ? 'Back to QuoteFiles' : 'Back to Uploads'
 
     const { data: upload, isLoading, isError, refetch } = useGetAiPdfUploadDetailQuery(uploadId, {
-        skip: isManualMode || !uploadId,
+        skip: isManualMode || isLineItemsMode || !uploadId,
     })
     const lineItemFields = LINE_ITEM_FIELD_OPTIONS
     const [syncUpload, { isLoading: isSyncing }] = useSyncAiPdfUploadMutation()
+    const [verifyQuoteFile] = useVerifyQuoteFileMutation()
 
     const [tables, setTables] = useState<AiPdfTable[]>([])
     const [hasManualHeadersSynced, setHasManualHeadersSynced] = useState(false)
     const [syncColumnsRequestToken, setSyncColumnsRequestToken] = useState(0)
     const [syncColumnsTargetTableId, setSyncColumnsTargetTableId] = useState<string | null>(null)
+    const [manualColumnActionTargetTableId, setManualColumnActionTargetTableId] = useState<string | null>(null)
+    const [addManualColumnRequestToken, setAddManualColumnRequestToken] = useState(0)
+    const [renameManualColumnRequestToken, setRenameManualColumnRequestToken] = useState(0)
     const [lastSyncedPayload, setLastSyncedPayload] = useState('')
     const [hasEditMappingCompleted, setHasEditMappingCompleted] = useState(false)
     const lastUploadIdRef = useRef<string | null>(null)
@@ -1053,6 +1112,11 @@ export default function UploadDetailPage() {
             const payload = buildSyncPayload(currentTables)
 
             await syncUpload({ uploadId, payload }).unwrap()
+
+            if (isFromQuote && sourceQuoteId && quoteFileId) {
+                await verifyQuoteFile({ quoteId: sourceQuoteId, quoteFileId }).unwrap()
+            }
+
             Message.success(`Synced successfully. `)
 
             // Mark edit mapping as completed after successful sync
@@ -1125,6 +1189,24 @@ export default function UploadDetailPage() {
                 rowIndex,
             }
         })
+
+        // Keep at least one editable row after consuming the first row as headers.
+        if (nextRows.length === 0) {
+            const blankRowData = selectedColumns.reduce<Record<string, unknown>>((acc, column) => {
+                acc[column.key] = ''
+                return acc
+            }, {})
+
+            nextRows.push({
+                id: '',
+                pdfTableId: targetTable.id,
+                rowData: blankRowData,
+                rowIndex: 0,
+                isDeleted: false,
+                createdAt: '',
+                updatedAt: '',
+            })
+        }
 
         const nextTables = tables.map((table) =>
             table.id === tableId
@@ -1244,7 +1326,7 @@ export default function UploadDetailPage() {
         let syncColumnsTargetId = mergedTable?.id || null
 
         if (!syncColumnsTargetId && tables.length > 0) {
-                  syncColumnsTargetId = tables[0].id
+            syncColumnsTargetId = tables[0].id
         }
 
         if (!syncColumnsTargetId) {
@@ -1261,6 +1343,28 @@ export default function UploadDetailPage() {
         Message.success('Table removed')
     }
 
+    const handleAddManualColumnClick = () => {
+        const manualTableId = tables[0]?.id || null
+        if (!manualTableId) {
+            Message.error('No table found')
+            return
+        }
+
+        setManualColumnActionTargetTableId(manualTableId)
+        setAddManualColumnRequestToken((prev) => prev + 1)
+    }
+
+    const handleRenameManualColumnClick = () => {
+        const manualTableId = tables[0]?.id || null
+        if (!manualTableId) {
+            Message.error('No table found')
+            return
+        }
+
+        setManualColumnActionTargetTableId(manualTableId)
+        setRenameManualColumnRequestToken((prev) => prev + 1)
+    }
+
     const handleMergeTables = () => {
         if (tables.length < 2) {
             Message.error('Need at least 2 tables to merge')
@@ -1273,15 +1377,48 @@ export default function UploadDetailPage() {
     }
 
     const isMergedView = tables.length === 1 && tables[0]?.id.startsWith('merged-')
-    
+
     // In edit existing mode from quote, button should be enabled until first mapping is completed
     // In manual mode, button enabled if there are unsaved changes
     const isSyncDisabled = isSyncing || (isManualMode ? !hasUnsyncedChanges : isFromQuote && hasEditMappingCompleted)
     const fileTagCount = isManualMode ? tables.length : upload?.tables.length ?? 0
 
+    if (isLineItemsMode) {
+        return (
+            <div className="hot-table-page relative z-0 min-h-[calc(100vh-var(--navbar-height))] max-w-full overflow-x-hidden bg-[#f8f9fc] p-4 sm:p-6 lg:p-8">
+                <div className="mb-6 flex flex-col items-start justify-between gap-3 sm:mb-7 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+                    <Link href={backHref}>
+                        <Button
+                            icon={<ArrowLeftOutlined />}
+                            variant="secondary"
+                            style={{ height: 40, padding: '0 14px', borderRadius: 10, fontSize: 14, fontWeight: 600 }}
+                        >
+                            {backLabel}
+                        </Button>
+                    </Link>
+                </div>
+
+                <Title level={3} className="mb-6 text-[22px] font-bold text-[#1d1f2b]">
+                    Edit Existing Data
+                </Title>
+
+                {!sourceQuoteId || !quoteFileId ? (
+                    <Empty
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description={<Text className="text-slate-400">Missing quote id or quote file id</Text>}
+                    />
+                ) : (
+                    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
+                        <QuoteFileLineItemsTable quoteId={sourceQuoteId} quoteFileId={quoteFileId} showSaveButton />
+                    </div>
+                )}
+            </div>
+        )
+    }
+
     if (!isManualMode && isLoading) {
         return (
-            <div className="min-h-screen bg-[#f8f9fc] p-4 sm:p-6 lg:p-8">
+            <div className="hot-table-page relative z-0 min-h-[calc(100vh-var(--navbar-height))] max-w-full overflow-x-hidden bg-[#f8f9fc] p-4 sm:p-6 lg:p-8">
                 <div className="flex min-h-75 items-center justify-center"><Spin size="large" /></div>
             </div>
         )
@@ -1289,7 +1426,7 @@ export default function UploadDetailPage() {
 
     if (!isManualMode && (isError || !upload)) {
         return (
-            <div className="min-h-screen bg-[#f8f9fc] p-4 sm:p-6 lg:p-8">
+            <div className="hot-table-page relative z-0 min-h-[calc(100vh-var(--navbar-height))] max-w-full overflow-x-hidden bg-[#f8f9fc] p-4 sm:p-6 lg:p-8">
                 <div className="flex min-h-75 items-center justify-center">
                     <Empty description={<Text className="text-slate-400">Upload not found</Text>} />
                 </div>
@@ -1298,7 +1435,7 @@ export default function UploadDetailPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#f8f9fc] p-4 sm:p-6 lg:p-8">
+        <div className="hot-table-page relative z-0 min-h-[calc(100vh-var(--navbar-height))] max-w-full overflow-x-hidden bg-[#f8f9fc] p-4 sm:p-6 lg:p-8">
             <div className="mb-6 flex flex-col items-start justify-between gap-3 sm:mb-7 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
                 <Link href={backHref}>
                     <Button
@@ -1315,7 +1452,7 @@ export default function UploadDetailPage() {
                     <div className="flex min-w-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-1.5">
                         <FileTextOutlined className="text-[13px] text-indigo-500" />
                         <Text className="max-w-40 truncate text-[13px] font-medium text-[#1d1f2b] sm:max-w-65">
-                            {isManualMode ? 'Manual Update Table' : getDisplayFileName(upload?.fileName) || upload?.fileName}
+                            {isManualMode ? '' : getDisplayFileName(upload?.fileName) || upload?.fileName}
                         </Text>
                     </div>
 
@@ -1332,6 +1469,28 @@ export default function UploadDetailPage() {
                 {isMergedView ? 'Table' : 'Tables'}
             </Title>
 
+            {isManualMode && tables.length > 0 && (
+                <div className="mb-3 flex justify-end gap-2">
+                    {!hasManualHeadersSynced ? (
+                        <Button
+                            size="large"
+                            onClick={() => handleSyncColumnHeaders(tables[0].id)}
+                        >
+                            Sync Headers
+                        </Button>
+                    ) : (
+                        <>
+                            <Button size="large" onClick={handleAddManualColumnClick}>
+                                Add New Column
+                            </Button>
+                            <Button size="large" onClick={handleRenameManualColumnClick}>
+                                Update Column Name
+                            </Button>
+                        </>
+                    )}
+                </div>
+            )}
+
             {tables.length === 0 ? (
                 <Empty
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -1346,12 +1505,16 @@ export default function UploadDetailPage() {
                             index={index}
                             isMergedTable={table.id.startsWith('merged-')}
                             showSyncColumnHeaders={isManualMode}
+                            disableSyncColumnHeaders={hasManualHeadersSynced}
                             shouldOpenUpdateColumns={table.id === syncColumnsTargetTableId}
                             openUpdateColumnsRequest={syncColumnsRequestToken}
+                            shouldAddManualColumn={table.id === manualColumnActionTargetTableId}
+                            openAddManualColumnRequest={addManualColumnRequestToken}
+                            shouldOpenRenameManualColumn={table.id === manualColumnActionTargetTableId}
+                            openRenameManualColumnRequest={renameManualColumnRequestToken}
                             onDelete={() => handleDeleteTable(table.id)}
                             onRowsChange={handleRowsChange}
                             onColumnsAndRowsChange={handleColumnsAndRowsChange}
-                            onSyncColumnHeaders={handleSyncColumnHeaders}
                             onUpdateSingleColumnTitle={handleUpdateSingleColumnTitle}
                             onUpdateColumnMappings={handleUpdateColumnMappings}
                             onSaveColumnMappings={handleSaveColumnMappings}

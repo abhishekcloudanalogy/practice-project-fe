@@ -119,7 +119,7 @@ const DashboardHeader = () => {
   }, []);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 h-(--navbar-height) w-full border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+    <header className="fixed inset-x-0 top-0 z-2200 h-(--navbar-height) w-full border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
       <div className="flex h-full w-full items-center justify-between px-3 sm:px-6">
 
         {/* Left — hamburger (mobile) + title */}

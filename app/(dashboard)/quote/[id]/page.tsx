@@ -5,92 +5,19 @@ import { useParams, useRouter } from 'next/navigation'
 import Button from '@/components/common/Button'
 import Message from '@/components/common/Message'
 import Modal from '@/components/common/Modal'
-import Table from '@/components/common/Table'
 import Collapse from '@/components/common/Collapse'
 import Tabs from '@/components/common/Tabs'
-import type { ColumnsType } from '@/components/common/Table/types'
 import { QuoteFilesCollapseGlobalStyle } from '@/components/quote/QuoteDetails.styles'
 import { useGetQuoteDetailQuery, useVerifyQuoteFileMutation } from '@/store/services/quote/apiSlice'
-import type { QuoteExtractedTable, QuoteFile } from '@/store/services/quote/types'
+import type { QuoteFile } from '@/store/services/quote/types'
 import { ArrowLeftOutlined, CheckOutlined, CloseOutlined } from '@/components/common/antd/icons'
-import { useAppSelector } from '@/store/hooks'
-import { selectDerivedLineItemsByFileId, selectDerivedTotalLineItemCount } from '@/store/services/quote/quoteSelectors'
 import { formatQuoteNumber } from '@/utils/formatters'
+import QuoteFileLineItemsTable from '@/components/quote/QuoteFileLineItemsTable'
 
-
-const formatCellValue = (value: unknown): string => {
-    if (value === null || value === undefined || value === '') return '-'
-    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')
-        return String(value)
-    return JSON.stringify(value)
-}
 
 const getDisplayFileName = (name: string | null | undefined): string =>
     (name ?? '').trim().replace(/\.pdf$/i, '')
 
-
-const getColumnNames = (table: QuoteExtractedTable): string[] => {
-    const seen = new Set<string>()
-    const names: string[] = []
-
-    for (const col of table.columns ?? []) {
-        const name = typeof col === 'string' ? col.trim()
-            : typeof (col as Record<string, unknown>).key === 'string' ? ((col as Record<string, unknown>).key as string).trim()
-                : null
-        if (name && !seen.has(name.toLowerCase())) {
-            seen.add(name.toLowerCase())
-            names.push(name)
-        }
-    }
-
-    return names
-}
-
-const getTableRows = (table: QuoteExtractedTable) =>
-    (table.rows ?? []).map((row, i) => ({
-        id: row.id || `${table.id}-row-${i}`,
-        ...(typeof row.rowData === 'object' && row.rowData !== null ? row.rowData : {}),
-    }))
-
-const getRenderableTables = (file: QuoteFile) =>
-    (file.tables ?? [])
-        .map((table, index) => ({
-            id: table.id || `${file.id}-table-${index}`,
-            title: table.title?.trim() || `Table ${index + 1}`,
-            columns: getColumnNames(table),
-            rows: getTableRows(table),
-        }))
-        .filter((table) => table.columns.length > 0 || table.rows.length > 0)
-
-type RenderableTable = ReturnType<typeof getRenderableTables>[number]
-
-const getMergedFileTable = (renderableTables: RenderableTable[]) => {
-    // Collect all unique column names, preserving first-appearance order
-    const seenCols = new Set<string>()
-    const allColumns: string[] = []
-    for (const table of renderableTables) {
-        for (const col of table.columns) {
-            if (!seenCols.has(col.toLowerCase())) {
-                seenCols.add(col.toLowerCase())
-                allColumns.push(col)
-            }
-        }
-    }
-
-    // Merge rows from every table; fill missing columns with empty string
-    const allRows: Array<Record<string, unknown> & { id: string }> = []
-    for (const table of renderableTables) {
-        for (const row of table.rows) {
-            const mergedRow: Record<string, unknown> & { id: string } = { id: row.id as string }
-            for (const col of allColumns) {
-                mergedRow[col] = col in (row as Record<string, unknown>) ? (row as Record<string, unknown>)[col] : ''
-            }
-            allRows.push(mergedRow)
-        }
-    }
-
-    return { columns: allColumns, rows: allRows }
-}
 
 
 const QuoteDetailsPage = () => {
@@ -100,7 +27,6 @@ const QuoteDetailsPage = () => {
     const [activeTab, setActiveTab] = React.useState<'review' | 'profitability'>('review')
     const [pendingVerification, setPendingVerification] = React.useState<Pick<QuoteFile, 'id' | 'file_name'> | null>(null)
     const [tableActionFile, setTableActionFile] = React.useState<QuoteFile | null>(null)
-    const [readTablesFile, setReadTablesFile] = React.useState<QuoteFile | null>(null)
     const [messageApi, contextHolder] = Message.useMessage()
 
     const { data, isLoading, isFetching, error } = useGetQuoteDetailQuery(
@@ -108,17 +34,6 @@ const QuoteDetailsPage = () => {
         { skip: !quoteId },
     )
     const [verifyQuoteFile, { isLoading: isVerifying }] = useVerifyQuoteFileMutation()
-
-    const lineItemsByFileIdSelector = React.useMemo(
-        () => selectDerivedLineItemsByFileId(quoteId ?? ''),
-        [quoteId],
-    )
-    const totalLineItemCountSelector = React.useMemo(
-        () => selectDerivedTotalLineItemCount(quoteId ?? ''),
-        [quoteId],
-    )
-    const lineItemsByFileId = useAppSelector(lineItemsByFileIdSelector)
-    const derivedLineItemCount = useAppSelector(totalLineItemCountSelector)
 
     React.useEffect(() => {
         if (error) messageApi.error('Failed to load quote details')
@@ -136,10 +51,6 @@ const QuoteDetailsPage = () => {
         setTableActionFile(null)
     }
 
-    const closeReadTablesModal = () => {
-        setReadTablesFile(null)
-    }
-
     const handleOpenHotTablesForFile = (file: Pick<QuoteFile, 'pdf_upload_id'>) => {
         const uploadId = file.pdf_upload_id?.trim()
 
@@ -151,6 +62,21 @@ const QuoteDetailsPage = () => {
         const nextPath = quoteId
             ? `/hottables/tables/${uploadId}?from=quote&quoteId=${encodeURIComponent(quoteId)}`
             : `/hottables/tables/${uploadId}`
+
+        router.push(nextPath)
+    }
+
+    const handleOpenLineItemsEditorForFile = (file: Pick<QuoteFile, 'id' | 'pdf_upload_id'>) => {
+        const uploadId = file.pdf_upload_id?.trim()
+
+        if (!uploadId) {
+            messageApi.error('Missing upload id for this file')
+            return
+        }
+
+        const nextPath = quoteId
+            ? `/hottables/tables/${uploadId}?mode=line-items&from=quote&quoteId=${encodeURIComponent(quoteId)}&quoteFileId=${encodeURIComponent(file.id)}`
+            : `/hottables/tables/${uploadId}?mode=line-items&quoteFileId=${encodeURIComponent(file.id)}`
 
         router.push(nextPath)
     }
@@ -170,12 +96,8 @@ const QuoteDetailsPage = () => {
     }
 
     const files = useMemo(() => data?.files ?? [], [data?.files])
-    const selectedFileTables = useMemo(
-        () => (readTablesFile ? getRenderableTables(readTablesFile) : []),
-        [readTablesFile],
-    )
     const filesWithRenderableTables = useMemo(
-        () => files.filter((file) => getRenderableTables(file).length > 0),
+        () => files.filter((file) => (file.tables ?? []).length > 0),
         [files],
     )
     const loading = isLoading || isFetching
@@ -189,11 +111,14 @@ const QuoteDetailsPage = () => {
     )
     const visibleFiles = activeTab === 'review' ? reviewFiles : profitabilityFiles
 
-    const lineItemCount = derivedLineItemCount
+    const lineItemCount = data?.counts?.lineItemCount ?? 0
 
     const collapseItems = useMemo(() => visibleFiles.map((file: QuoteFile) => {
-        const renderableTables = getRenderableTables(file)
-        const fileLineItemCount = lineItemsByFileId[file.id]?.length ?? 0
+        const fileLineItemCount = file.lineItemCount ?? 0
+        const fileTotalRows = (file.tables ?? []).reduce(
+            (count, table) => count + (Array.isArray(table.rows) ? table.rows.length : 0),
+            0,
+        )
         return {
             key: file.id,
             label: (
@@ -244,54 +169,23 @@ const QuoteDetailsPage = () => {
             ),
             children: (
                 <div className="space-y-5">
-                    {renderableTables.map((table) => {
-                        const previewRows = table.rows.slice(0, 3)
-                        const columns: ColumnsType<Record<string, unknown> & { id: string }> = [
-                            {
-                                title: 'S.No',
-                                key: 'sno',
-                                width: 60,
-                                render: (_: unknown, _record: Record<string, unknown> & { id: string }, index: number) => (
-                                    <span className="flex items-center justify-center text-slate-700">{index + 1}</span>
-                                ),
-                            },
-                            ...table.columns.map((name) => ({
-                                title: name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-                                dataIndex: name,
-                                key: name,
-                                render: (value: unknown) => (
-                                    <span className="text-slate-700">{formatCellValue(value)}</span>
-                                ),
-                            })),
-                        ]
-
-                        return (
-                            <section key={table.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                                
-
-                                <div className="p-3 sm:p-4">
-                                    {table.rows.length ? (
-                                        <>
-                                            <Table
-                                                columns={columns}
-                                                dataSource={previewRows}
-                                                rowKey={(record) => record.id as string}
-                                                scroll={{ x: 980 }}
-                                                pagination={false}
-                                            />
-                                           
-                                        </>
-                                    ) : (
-                                        <p className="text-sm text-slate-500">No extracted rows found for this table.</p>
-                                    )}
-                                </div>
-                            </section>
-                        )
-                    })}
+                    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
+                            <span className="text-xs font-medium text-slate-500">
+                                Line Items
+                            </span>
+                            <span className="text-xs text-slate-500">
+                                {fileTotalRows} rows
+                            </span>
+                        </div>
+                        <div className="p-3 sm:p-4">
+                            <QuoteFileLineItemsTable quoteId={quoteId!} quoteFileId={file.id} useHotTable={false} />
+                        </div>
+                    </section>
                 </div>
             ),
         }
-    }), [activeTab, visibleFiles, isVerifying, messageApi, quoteId, lineItemsByFileId])
+    }), [activeTab, visibleFiles, isVerifying, quoteId])
 
     const collapseKey = `${activeTab}-${visibleFiles[0]?.id ?? 'empty'}`
     const handleBackToQuotes = () => {
@@ -344,23 +238,24 @@ const QuoteDetailsPage = () => {
                 destroyOnHidden
                 footer={(
                     <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                       
                         <Button
                             htmlType="button"
                             variant="dashed"
                             onClick={() => {
                                 if (!tableActionFile) return
-                                handleOpenHotTablesForFile(tableActionFile)
+                                handleOpenLineItemsEditorForFile(tableActionFile)
                                 closeTableActionModal()
                             }}
                         >
                             Edit Existing Data
                         </Button>
-                        <Button
+                         <Button
                             htmlType="button"
                             variant="dashed"
                             onClick={() => {
                                 if (!tableActionFile) return
-                                setReadTablesFile(tableActionFile)
+                                handleOpenHotTablesForFile(tableActionFile)
                                 closeTableActionModal()
                             }}
                         >
@@ -397,70 +292,6 @@ const QuoteDetailsPage = () => {
                     <span className="font-semibold text-slate-900">{getDisplayFileName(tableActionFile?.file_name) || 'this file'}</span>
                     .
                 </p>
-            </Modal>
-
-            <Modal
-                open={Boolean(readTablesFile)}
-                title={`Read Tables${readTablesFile?.file_name ? ` - ${getDisplayFileName(readTablesFile.file_name)}` : ''}`}
-                onCancel={closeReadTablesModal}
-                destroyOnHidden
-                width="min(1100px, calc(100vw - 24px))"
-                footer={(
-                    <div className="flex justify-end">
-                        <Button htmlType="button" variant="secondary" onClick={closeReadTablesModal}>
-                            Close
-                        </Button>
-                    </div>
-                )}
-            >
-                <div className="max-h-[65vh] space-y-4 overflow-y-auto pr-1">
-                    {!selectedFileTables.length && (
-                        <p className="text-sm text-slate-500">No extracted tables found for this file.</p>
-                    )}
-
-                    {selectedFileTables.map((table) => {
-                        const columns: ColumnsType<Record<string, unknown> & { id: string }> = [
-                            {
-                                title: 'S.No',
-                                key: 'sno',
-                                width: 60,
-                                render: (_: unknown, _record: Record<string, unknown> & { id: string }, index: number) => (
-                                    <span className="flex items-center justify-center text-slate-700">{index + 1}</span>
-                                ),
-                            },
-                            ...table.columns.map((name) => ({
-                                title: name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-                                dataIndex: name,
-                                key: name,
-                                render: (value: unknown) => (
-                                    <span className="text-slate-700">{formatCellValue(value)}</span>
-                                ),
-                            })),
-                        ]
-
-                        return (
-                            <section key={table.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
-                                    <span className="text-xs font-medium text-slate-500">{table.rows.length} rows</span>
-                                </div>
-
-                                <div className="p-3 sm:p-4">
-                                    {table.rows.length ? (
-                                        <Table
-                                            columns={columns}
-                                            dataSource={table.rows}
-                                            rowKey={(record) => record.id as string}
-                                            scroll={{ x: 980 }}
-                                            pagination={false}
-                                        />
-                                    ) : (
-                                        <p className="text-sm text-slate-500">No extracted rows found for this table.</p>
-                                    )}
-                                </div>
-                            </section>
-                        )
-                    })}
-                </div>
             </Modal>
 
             <div className="mb-3 flex items-center">

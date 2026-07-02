@@ -18,13 +18,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     <SidebarProvider>
       <div className="min-h-[calc(100vh-var(--navbar-height))] bg-slate-50 text-slate-900">
         <DashboardHeader />
-        <div className="shrink-0 pt-(--navbar-height)" aria-hidden="true" />
         <Sidebar />
         <main
-          className="w-full overflow-x-hidden transition-[padding-left] duration-200"
+          className="w-full overflow-x-hidden pt-(--navbar-height) transition-[padding-left] duration-200"
           style={{
             paddingLeft: 'var(--sidebar-width, 92px)',
-            paddingTop: '0px',
             minHeight: 'calc(100vh - var(--navbar-height))',
           }}
         >

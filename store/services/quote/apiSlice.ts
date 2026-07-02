@@ -1,13 +1,22 @@
 import { baseApi } from '../baseApi'
 import type {
 	AddQuoteFilesPayload,
+	CreateLineItemPayload,
+	CreateLineItemResponse,
 	CreateQuotePayload,
+	DeleteLineItemPayload,
+	DeleteLineItemResponse,
+	GetLineItemsPayload,
+	LineItem,
+	LineItemsResponse,
 	QuoteDetail,
 	QuoteDetailResponse,
 	QuoteListItem,
 	QuoteListResponse,
 	QuoteMutationData,
 	QuoteMutationResponse,
+	UpdateLineItemPayload,
+	UpdateLineItemResponse,
 	VerifyQuoteFilePayload,
 	VerifyQuoteFileResponse,
 } from './types'
@@ -29,9 +38,9 @@ const buildQuoteFormData = (files: File[], name?: string) => {
 const quoteListTags = (result: QuoteListItem[] | undefined) =>
 	result
 		? [
-			  { type: 'Quote' as const, id: 'LIST' },
-			  ...result.map((quote) => ({ type: 'Quote' as const, id: quote.id })),
-		  ]
+			{ type: 'Quote' as const, id: 'LIST' },
+			...result.map((quote) => ({ type: 'Quote' as const, id: quote.id })),
+		]
 		: [{ type: 'Quote' as const, id: 'LIST' }]
 
 const quoteDetailTags = (quoteId: string, result?: QuoteDetail | null) => [
@@ -57,7 +66,10 @@ export const quoteApi = baseApi.injectEndpoints({
 		getQuoteDetail: builder.query<QuoteDetail, string>({
 			query: (quoteId) => `api/quotes/${quoteId}`,
 			transformResponse: (response: QuoteDetailResponse) => response.data,
-			providesTags: (_result, _error, quoteId) => quoteDetailTags(quoteId, _result),
+			providesTags: (_result, _error, quoteId) => [
+				...quoteDetailTags(quoteId, _result),
+				{ type: 'QuoteDetail' as const, id: quoteId },
+			],
 		}),
 		createQuote: builder.mutation<QuoteMutationData, CreateQuotePayload>({
 			query: ({ name, files }) => ({
@@ -88,6 +100,56 @@ export const quoteApi = baseApi.injectEndpoints({
 				{ type: 'Quote' as const, id: 'LIST' },
 			],
 		}),
+		getQuoteFileLineItems: builder.query<LineItem[], GetLineItemsPayload>({
+			query: ({ quoteId, quoteFileId }) => `api/quotes/${quoteId}/files/${quoteFileId}/line-items`,
+			transformResponse: (response: LineItemsResponse) => response.data.lineItems,
+			providesTags: (_result, _error, arg) => [
+				{ type: 'LineItem' as const, id: `${arg.quoteId}-${arg.quoteFileId}` },
+				{ type: 'LineItem' as const, id: arg.quoteFileId },
+				{ type: 'QuoteFileLineItems' as const, id: arg.quoteFileId },
+			],
+		}),
+		createLineItem: builder.mutation<{ lineItem: LineItem }, CreateLineItemPayload>({
+			query: ({ quoteId, quoteFileId, data }) => ({
+				url: `api/quotes/${quoteId}/files/${quoteFileId}/line-items`,
+				method: 'POST',
+				body: data,
+			}),
+			transformResponse: (response: CreateLineItemResponse) => response.data,
+			invalidatesTags: (_result, _error, arg) => [
+				{ type: 'QuoteFileLineItems' as const, id: arg.quoteFileId },
+				{ type: 'QuoteDetail' as const, id: arg.quoteId },
+				{ type: 'LineItem' as const, id: `${arg.quoteId}-${arg.quoteFileId}` },
+				{ type: 'LineItem' as const, id: arg.quoteFileId },
+			],
+		}),
+		updateLineItem: builder.mutation<{ lineItem: LineItem }, UpdateLineItemPayload>({
+			query: ({ quoteId, quoteFileId, lineItemId, data }) => ({
+				url: `api/quotes/${quoteId}/files/${quoteFileId}/line-items/${lineItemId}`,
+				method: 'PATCH',
+				body: data,
+			}),
+			transformResponse: (response: UpdateLineItemResponse) => response.data,
+			invalidatesTags: (_result, _error, arg) => [
+				{ type: 'QuoteFileLineItems' as const, id: arg.quoteFileId },
+				{ type: 'QuoteDetail' as const, id: arg.quoteId },
+				{ type: 'LineItem' as const, id: `${arg.quoteId}-${arg.quoteFileId}` },
+				{ type: 'LineItem' as const, id: arg.quoteFileId },
+			],
+		}),
+		deleteLineItem: builder.mutation<{ id: string }, DeleteLineItemPayload>({
+			query: ({ quoteId, quoteFileId, lineItemId }) => ({
+				url: `api/quotes/${quoteId}/files/${quoteFileId}/line-items/${lineItemId}`,
+				method: 'DELETE',
+			}),
+			transformResponse: (response: DeleteLineItemResponse) => response.data,
+			invalidatesTags: (_result, _error, arg) => [
+				{ type: 'QuoteFileLineItems' as const, id: arg.quoteFileId },
+				{ type: 'QuoteDetail' as const, id: arg.quoteId },
+				{ type: 'LineItem' as const, id: `${arg.quoteId}-${arg.quoteFileId}` },
+				{ type: 'LineItem' as const, id: arg.quoteFileId },
+			],
+		}),
 	}),
 	overrideExisting: false,
 })
@@ -99,4 +161,8 @@ export const {
 	useCreateQuoteMutation,
 	useAddQuoteFilesMutation,
 	useVerifyQuoteFileMutation,
+	useGetQuoteFileLineItemsQuery,
+	useCreateLineItemMutation,
+	useUpdateLineItemMutation,
+	useDeleteLineItemMutation,
 } = quoteApi

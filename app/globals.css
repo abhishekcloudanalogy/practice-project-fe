@@ -3,9 +3,15 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
-  --sidebar-width: 0px;
+  --sidebar-width: 92px;
   --navbar-offset: 92px;
   --navbar-height: 72px;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --sidebar-width: 0px;
+  }
 }
 
 body {
@@ -33,4 +39,16 @@ body {
 .customer-profile-modal .ant-modal-body::-webkit-scrollbar,
 .customer-profile-modal .ant-modal-body *::-webkit-scrollbar {
   display: none;
+}
+
+/* Keep Handsontable visual clones below the fixed dashboard header on table detail page. */
+.hot-table-page .ht_clone_master,
+.hot-table-page .ht_clone_inline_start,
+.hot-table-page .ht_clone_bottom,
+.hot-table-page .ht_clone_bottom_inline_start_corner,
+.hot-table-page .ht_clone_top,
+.hot-table-page .ht_clone_top_inline_start_corner,
+.hot-table-page .ht_editor_visible,
+.hot-table-page .handsontable .bottomSelectionHandle-HitArea {
+  z-index: 1 !important;
 }
