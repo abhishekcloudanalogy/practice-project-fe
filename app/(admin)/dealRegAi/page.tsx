@@ -201,7 +201,7 @@ export default function DealRegAiPage() {
             expandable={{
               expandIcon: ({ expanded, onExpand, record }) => (
                 <Button
-                  variant="soft"
+                  variant="outlined"
                   shape="circle"
                   htmlType="button"
                   onClick={(e) => onExpand(record, e)}
@@ -364,7 +364,7 @@ export default function DealRegAiPage() {
           {/* Save & Next */}
           <div className="flex justify-center pt-2">
             <Button
-              variant="primary"
+              variant="solid"
               style={{ height: 44, borderRadius: 24, fontWeight: 600, paddingInline: 32 }}
               onClick={() => {
                 const allSelected = [...regRows, ...selfRegRows].filter((r) => r.programId);

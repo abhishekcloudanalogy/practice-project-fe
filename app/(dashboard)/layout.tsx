@@ -21,14 +21,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <Sidebar />
 
       <main
-        className="w-full overflow-x-hidden transition-[padding-left] duration-200"
+        className="w-full transition-[padding-left] duration-200 pl-0 md:pl-[var(--sidebar-width,92px)]"
         style={{
-          paddingLeft: 'var(--sidebar-width, 92px)',
-          paddingTop: '100px',
+          paddingTop: 'var(--navbar-height)',
           minHeight: 'calc(100vh - var(--navbar-height) )',
         }}
       >
-        {children}
+        <div className="overflow-x-hidden">
+          {children}
+        </div>
       </main>
     </div>
   )

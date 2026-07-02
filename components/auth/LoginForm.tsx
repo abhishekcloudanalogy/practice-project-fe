@@ -159,7 +159,7 @@ const LoginForm = () => {
 							prefix={<LockOutlined className="text-slate-400" />}
 							placeholder="Enter your password"
 							size="large"
-							iconRender={(visible) =>
+							iconRender={(visible: boolean) =>
 								visible ? (
 									<EyeOutlined className="text-slate-400" />
 								) : (

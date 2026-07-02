@@ -1,4 +1,4 @@
-import type { InputProps } from '@/components/common/antd/Input'
+import type { InputProps } from 'antd'
 
 export type AppInputProps = Omit<InputProps, 'variant'> & {
 	appearance?: 'default' | 'soft'

@@ -6,15 +6,25 @@ export type ContactPayload = {
 	secondaryContact?: string | null
 	company?: string | null
 	notes?: string | null
+	contactType?: 'PRIMARY' | 'SECONDARY'
+	isPrimaryBillingContact?: boolean
+	isPrimaryShippingContact?: boolean
+	customerId?: string | null
 }
 
-export type ContactMessagePayload = ContactPayload & {
+export type ContactMessagePayload = {
+	firstName: string
+	lastName?: string
+	email: string
+	primaryContact: string
+	secondaryContact?: string
 	subject: string
 	message: string
 }
 
 export type Contact = ContactPayload & {
 	id: string
+	customerId?: string | null
 	createdAt?: string
 	updatedAt?: string
 }
@@ -144,6 +154,78 @@ export type ApiResponse<T> = {
 	success?: boolean
 	message?: string
 	data: T
+}
+
+// ─── Customer Types ────────────────────────────────────────────────────────
+
+export type CustomerPayload = {
+	name?: string | null
+	currency?: string | null
+	website?: string | null
+	industry?: string | null
+	profileImage?: string | null
+	organization?: string | null
+}
+
+export type Customer = CustomerPayload & {
+	id: string
+	userId: string
+	isDeleted?: boolean
+	createdAt?: string
+	updatedAt?: string
+	addresses?: Pick<Address, 'id' | 'addressLine' | 'city' | 'state' | 'zipCode' | 'country' | 'type' | 'isDefaultShipping' | 'isDefaultBilling'>[]
+	contacts?: Contact[]
+}
+
+// ─── Address Types ────────────────────────────────────────────────────────
+
+export type AddressType = 'SHIPPING' | 'BILLING' | 'BOTH'
+
+export type AddressPayload = {
+	addressLine: string
+	city: string
+	state: string
+	zipCode: string
+	country: string
+	type: AddressType
+	isDefaultShipping?: boolean
+	isDefaultBilling?: boolean
+}
+
+export type Address = AddressPayload & {
+	id: string
+	userId: string
+	customerId: string
+	createdAt?: string
+	updatedAt?: string
+}
+
+// ─── Opportunity Types ─────────────────────────────────────────────────────
+
+export type OpportunityPayload = {
+	customerId: string
+	opportunityId?: string | null
+	syncedQuote?: number | null
+	organization?: string | null
+	title?: string | null
+	amount?: number | null
+	pdfUrl?: string[]
+	description?: string | null
+	closeDate?: string | null
+	expectedPrice?: number | null
+	addShipment?: boolean
+	rfqRfiNumber?: string | null
+	periodOfPerformanceStartDate?: string | null
+	periodOfPerformanceEndDate?: string | null
+	probability?: number | null
+}
+
+export type Opportunity = OpportunityPayload & {
+	id: string
+	userId: string
+	isDeleted?: boolean
+	createdAt?: string
+	updatedAt?: string
 }
 
 // ─── Partner Types ──────────────────────────────────────────────────────────

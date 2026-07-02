@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { Suspense, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import dynamic from 'next/dynamic'
@@ -13,7 +13,7 @@ const FormBuilder = dynamic(
   { ssr: false }
 )
 
-export default function FormBuilderPage() {
+function FormBuilderPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { data: session } = useSession()
@@ -184,5 +184,13 @@ export default function FormBuilderPage() {
         />
       </div>
     </div>
+  )
+}
+
+export default function FormBuilderPage() {
+  return (
+    <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - 80px)' }}>Loading form builder…</div>}>
+      <FormBuilderPageContent />
+    </Suspense>
   )
 }

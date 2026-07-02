@@ -23,9 +23,20 @@ export default function AddPartnerForm({ onSubmit, onCancel }: AddPartnerFormPro
   const onSubmitHandler = async (values: PartnerFormValues) => {
     try {
       const response = await addPartner(values).unwrap();
+      const partner = response.data;
+      const partnerRow: PartnerRow = {
+        Id: partner?.id ?? 0,
+        "External id": partner?.externalId ?? null,
+        "partner Name": partner?.partnerName ?? null,
+        "parent Partner": partner?.parentPartner ?? null,
+        "PM Id": partner?.pmId ?? null,
+        url: partner?.url ?? null,
+        email: partner?.email ?? null,
+        programs: [],
+      };
       message.success("Partner created successfully");
       form.resetFields();
-      onSubmit(response.data);
+      onSubmit(partnerRow);
     } catch (error: any) {
       const errorMessage = error?.data?.message || error?.message || "Request failed";
       message.error(errorMessage);

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Table from '@/components/common/Table';
 import Button from '@/components/common/antd/Button';
 import Modal from '@/components/common/Modal';
-import AntdModal from '@/components/common/antd/Modal';
+import confirm from '@/components/common/antd/Confirm';
 import Form from '@/components/common/Form';
 import Input from '@/components/common/Input';
 import Card from '@/components/common/Card';
@@ -87,7 +87,7 @@ const ContactPage = () => {
   };
 
   const handleDelete = useCallback((id: string) => {
-    AntdModal.confirm({
+    confirm({
       title: 'Delete Contact',
       content: 'Are you sure you want to delete this contact?',
       okText: 'Yes, Delete',
@@ -182,7 +182,7 @@ const ContactPage = () => {
   const companyCount = useMemo(() => contacts.filter((c) => c.company).length, [contacts]);
 
   return (
-    <div className="px-2 pb-3 pt-0 sm:px-4 sm:pb-6">
+    <div className="px-2 pb-3 pt-0 sm:px-4 sm:pb-6 m-5">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
         <div>
