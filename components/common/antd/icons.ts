@@ -29,5 +29,4 @@ export {
 	ArrowRightOutlined,
 	InboxOutlined,
 	TableOutlined,
-	CheckOutlined,
 } from '@ant-design/icons'
