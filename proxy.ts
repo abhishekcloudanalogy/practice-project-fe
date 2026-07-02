@@ -52,6 +52,15 @@ const ROUTE_ACCESS: RouteAccessRule[] = [
     path: "/contact",
     allowedRoles: [ROLES.USER, ROLES.ADMIN, ROLES.SUPER_ADMIN],
   },
+  {
+    path: "/customer",
+    allowedRoles: [ROLES.USER, ROLES.ADMIN, ROLES.SUPER_ADMIN],
+  },
+  {
+    path: "/opportunity",
+    allowedRoles: [ROLES.USER, ROLES.ADMIN, ROLES.SUPER_ADMIN],
+  },
+
 ];
 
 function getRoleFromToken(token: unknown): Role | undefined {
@@ -59,7 +68,11 @@ function getRoleFromToken(token: unknown): Role | undefined {
 
   const role = (token as { user?: { role?: string } }).user?.role;
 
-  if (role === ROLES.USER || role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) {
+  if (
+    role === ROLES.USER ||
+    role === ROLES.ADMIN ||
+    role === ROLES.SUPER_ADMIN
+  ) {
     return role;
   }
 
@@ -72,7 +85,10 @@ function findRouteAccessRule(pathname: string): RouteAccessRule | undefined {
   );
 }
 
-function isRoleAllowedForPath(pathname: string, role: Role | undefined): boolean {
+function isRoleAllowedForPath(
+  pathname: string,
+  role: Role | undefined,
+): boolean {
   const rule = findRouteAccessRule(pathname);
 
   if (!rule) return true;
@@ -112,7 +128,10 @@ export const config = {
     "/adminPartner/:path*",
     "/dealRegAi/:path*",
     "/admin/:path*",
+
     "/dashboard/:path*",
     "/contact/:path*",
+    "/customer/:path*",
+    "/opportunity/:path*",
   ],
 };
