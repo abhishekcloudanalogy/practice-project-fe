@@ -839,7 +839,7 @@ const CustomerProfile = () => {
           lg:fixed lg:left-(--sidebar-width,92px) lg:top-[calc(var(--navbar-height)+0.5rem)] lg:self-start lg:max-h-[calc(100vh-var(--navbar-height)-0.5rem)] lg:overflow-hidden"
         >
           {/* Profile Overview Card */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mt-3">
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mt-5">
             <div className="h-14 bg-linear-to-r from-indigo-500 to-violet-500 rounded-t-xl" />
             <div className="flex flex-col items-center -mt-7 pb-3 px-4">
               <div className="w-16 h-16 rounded-full bg-linear-to-br from-indigo-400 to-violet-500 flex items-center justify-center text-white text-xl font-bold border-4 border-white">
