@@ -38,10 +38,36 @@ const DashboardHeader = () => {
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const displayName = session?.user?.name || session?.user?.email || "User";
   const userEmail = session?.user?.email || "";
   const userImage = session?.user?.image;
+
+  const cancelCloseDropdown = useCallback(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  }, []);
+
+  const openDropdown = useCallback(() => {
+    cancelCloseDropdown();
+    setDropdownOpen(true);
+  }, [cancelCloseDropdown]);
+
+  const closeDropdown = useCallback(() => {
+    cancelCloseDropdown();
+    setDropdownOpen(false);
+  }, [cancelCloseDropdown]);
+
+  const scheduleCloseDropdown = useCallback(() => {
+    cancelCloseDropdown();
+    closeTimerRef.current = setTimeout(() => {
+      setDropdownOpen(false);
+      closeTimerRef.current = null;
+    }, 150);
+  }, [cancelCloseDropdown]);
 
   const handleLogout = useCallback(async () => {
     try {
@@ -72,6 +98,14 @@ const DashboardHeader = () => {
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
+
   // Close dropdown on Escape key
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -85,10 +119,11 @@ const DashboardHeader = () => {
   }, []);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 h-16 border-b border-slate-200 bg-white">
-      <div className="flex h-full items-center justify-between px-4 sm:px-6">
-        {/* Left */}
-        <div className="flex items-center gap-3">
+    <header className="fixed inset-x-0 top-0 z-2200 h-(--navbar-height) w-full border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+      <div className="flex h-full w-full items-center justify-between px-3 sm:px-6">
+
+        {/* Left — hamburger (mobile) + title */}
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={openMobile}
@@ -98,34 +133,39 @@ const DashboardHeader = () => {
             <MdMenu size={24} />
           </button>
 
-          <Link href="/dashboard" className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white">
               <LuLayoutDashboard size={20} />
             </div>
 
             <div>
               <h1 className="text-sm font-semibold text-slate-900">
-                Dashboard
+                Practice Project
               </h1>
               <p className="hidden text-xs text-slate-500 sm:block">
-                Admin Panel
+                Workspace
               </p>
             </div>
           </Link>
         </div>
 
-        {/* Right */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100"
-            aria-label="Notifications"
-          >
-            <MdNotificationsNone size={24} />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500" />
-          </button>
+        {/* Right — user + logout */}
+        <div className="flex items-center gap-2 sm:gap-4">
+          
+      
 
-          <div ref={dropdownRef} className="relative">
+          <div
+            ref={dropdownRef}
+            className="relative"
+            onMouseEnter={openDropdown}
+            onMouseLeave={scheduleCloseDropdown}
+            onFocus={openDropdown}
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                closeDropdown();
+              }
+            }}
+          >
             <button
               type="button"
               onClick={() => setDropdownOpen((prev) => !prev)}
@@ -142,14 +182,14 @@ const DashboardHeader = () => {
                   className="h-10 w-10 rounded-full object-cover"
                 />
               ) : (
-                <AdminAvatar size={40} />
+                <AdminAvatar size={30} />
               )}
 
               <div className="hidden text-left sm:block">
                 <p className="max-w-35 truncate text-sm font-medium">
                   {displayName}
                 </p>
-                <p className="text-xs text-slate-500">Admin</p>
+                <p className="text-xs text-slate-500">Workspace</p>
               </div>
 
               <MdKeyboardArrowDown
@@ -163,6 +203,8 @@ const DashboardHeader = () => {
             {dropdownOpen && (
               <div
                 role="menu"
+                onMouseEnter={cancelCloseDropdown}
+                onMouseLeave={scheduleCloseDropdown}
                 className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
               >
                 <div className="flex items-center gap-3 border-b px-4 py-3">

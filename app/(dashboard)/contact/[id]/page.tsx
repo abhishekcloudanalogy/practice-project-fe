@@ -3,11 +3,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { App } from 'antd';
 import { useParams, useRouter } from 'next/navigation';
-import Button from '@/components/common/antd/Button';
+import Button from '@/components/common/Button';
 import Form from '@/components/common/Form';
 import Input from '@/components/common/Input';
 import Card from '@/components/common/Card';
-import { Modal as AntdModal } from 'antd';
+import Modal from '@/components/common/Modal';
 import {
   useDeleteContactMutation,
   useGetContactsQuery,
@@ -79,7 +79,7 @@ const ContactDetailPage = () => {
   };
 
   const handleDelete = () => {
-    AntdModal.confirm({
+    Modal.confirm({
       title: 'Delete Contact',
       content: 'Are you sure you want to delete this contact?',
       okText: 'Yes, Delete',

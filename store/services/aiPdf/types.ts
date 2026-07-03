@@ -120,6 +120,8 @@ export type AiPdfSyncTableInput = {
 
 export type AiPdfSyncPayload = {
   tables: AiPdfSyncTableInput[]
+  quoteId?: string
+  quoteFileId?: string
 }
 
 export type AiPdfSyncSummary = {
