@@ -18,6 +18,7 @@ export {
 	MenuOutlined,
 	PhoneOutlined,
 	SendOutlined,
+	SearchOutlined,
 	UserOutlined,
 	SaveOutlined,
 	DownloadOutlined,

@@ -134,6 +134,8 @@ export type QuoteDetail = {
 	counts: {
 		fileCount: number
 		lineItemCount: number
+		reviewLineItemCount: number
+		profitabilityLineItemCount: number
 	}
 }
 
@@ -150,6 +152,85 @@ export type AddQuoteFilesPayload = {
 export type VerifyQuoteFilePayload = {
 	quoteId: string
 	quoteFileId: string
+}
+
+export type BulkDeleteLineItemsPayload = {
+	quoteId: string
+	quoteFileId: string
+	lineItemIds: string[]
+}
+
+export type BulkUpdateLineItemsPayload = {
+	quoteId: string
+	quoteFileId: string
+	lineItemIds: string[]
+	data: Partial<Pick<LineItem,
+		| 'lineNumber' | 'itemCode' | 'employeeId' | 'employeeName' | 'description'
+		| 'department' | 'category' | 'email' | 'phone' | 'salary' | 'quantity'
+		| 'unitPrice' | 'amount' | 'currency' | 'status' | 'referenceNo' | 'location' | 'notes'
+	>>
+}
+
+export type BulkDeleteLineItemsResponse = {
+	success: boolean
+	data: { count: number; ids: string[] }
+}
+
+export type BulkUpdateLineItemsResponse = {
+	success: boolean
+	data: { count: number; lineItems: LineItem[] }
+}
+
+// ── Profitability line items ─────────────────────────────────────────────────
+
+export type ProfitabilityLineItem = LineItem
+
+export type GetProfitabilityLineItemsPayload = {
+	quoteId: string
+	quoteFileId: string
+}
+
+export type ProfitabilityLineItemsResponse = {
+	success: boolean
+	data: { lineItems: ProfitabilityLineItem[] }
+}
+
+export type BulkUpdateProfitabilityPayload = {
+	quoteId: string
+	quoteFileId: string
+	lineItemIds: string[]
+	data: Partial<Pick<LineItem,
+		| 'lineNumber' | 'itemCode' | 'employeeId' | 'employeeName' | 'description'
+		| 'department' | 'category' | 'email' | 'phone' | 'salary' | 'quantity'
+		| 'unitPrice' | 'amount' | 'currency' | 'status' | 'referenceNo' | 'location' | 'notes'
+	>>
+}
+
+export type BulkDeleteProfitabilityPayload = {
+	quoteId: string
+	quoteFileId: string
+	lineItemIds: string[]
+}
+
+export type DeleteProfitabilityLineItemPayload = {
+	quoteId: string
+	quoteFileId: string
+	itemId: string
+}
+
+export type BulkProfitabilityUpdateResponse = {
+	success: boolean
+	data: { count: number; lineItems: ProfitabilityLineItem[] }
+}
+
+export type BulkProfitabilityDeleteResponse = {
+	success: boolean
+	data: { count: number; ids: string[] }
+}
+
+export type DeleteProfitabilityLineItemResponse = {
+	success: boolean
+	data: { id: string }
 }
 
 export type QuoteMutationData = {

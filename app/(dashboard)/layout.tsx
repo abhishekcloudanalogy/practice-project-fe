@@ -9,8 +9,12 @@ type DashboardLayoutProps = {
 }
 
 export const metadata: Metadata = {
-  title: 'Dashboard',
-  description: 'A simple ui for Dashboard',
+  title: {
+    default: 'Dashboard',
+    template: '%s | CloudAnalogy',
+  },
+  description: 'Manage your quotes, customers, contacts, and opportunities from your CloudAnalogy dashboard.',
+  robots: { index: false, follow: false },
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {

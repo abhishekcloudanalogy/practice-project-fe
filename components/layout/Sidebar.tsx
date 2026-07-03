@@ -23,6 +23,7 @@ import { HiAdjustmentsHorizontal } from "react-icons/hi2";
 import { MdArrowBack, MdArrowForward, MdClose } from 'react-icons/md'
 import Drawer from '@/components/common/Drawer'
 import SiderComponent from '@/components/common/Sidebar'
+import Button from '@/components/common/Button'
 import {
   FilePdfOutlined,
   FileTextOutlined,
@@ -53,12 +54,11 @@ const itemsByRole: Record<UserRole, SidebarItem[]> = {
     { key: 'home', label: 'Home', icon: <MdHome size={20} />, href: '/dashboard' },
     { key: 'aipdf', label: 'HotTables', icon: <MdDescription size={20} />, href: '/hottables' },
     { key: 'pdf', label: 'PDF Extraction', icon: <FilePdfOutlined />, href: '/pdf' },
-    { key: 'customers', label: 'Customers', icon: <MdGroup size={20} />, href: '/customer' },
-      { key: 'opportunity', label: 'opportunity', icon: <MdTrendingUp size={20} />, href: '/opportunity' },
     { key: 'quote', label: 'Quotes', icon: <FileTextOutlined size={20} />, href: '/quote' },
     { key: 'contacts', label: 'Contacts', icon: <MdPerson size={20} />, href: '/contact' },
+    { key: 'customers', label: 'Customers', icon: <MdGroup size={20} />, href: '/customer' },
+    { key: 'opportunity', label: 'opportunity', icon: <MdTrendingUp size={20} />, href: '/opportunity' },
     { key: 'order', label: 'Order', icon: <MdShoppingCart size={20} /> },
-
   ],
   admin: [
     { key: 'dashboard', label: 'Dashboard', icon: <MdDashboard size={20} />, href: '/admin' },
@@ -141,22 +141,22 @@ const Sidebar = () => {
         placement="left"
         size="default"
         closable={false}
+        zIndex={9999}
       >
         <DrawerBrandBlock>
-        
+
           <BrandCopy>
             <BrandTitle>Explorer</BrandTitle>
             <BrandSubtitle>Welcome</BrandSubtitle>
           </BrandCopy>
-          <button
-            type="button"
+          <Button
+            htmlType="button"
+            variant="bgclear"
             onClick={closeMobile}
             aria-label="Close navigation"
+            icon={<MdClose size={18} />}
             style={{
               marginLeft: 'auto',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               height: 32,
               width: 32,
               borderRadius: 8,
@@ -165,9 +165,7 @@ const Sidebar = () => {
               color: '#64748b',
               flexShrink: 0,
             }}
-          >
-            <MdClose size={18} />
-          </button>
+          />
         </DrawerBrandBlock>
         <DrawerSidebarNav>{drawerNav}</DrawerSidebarNav>
       </Drawer>

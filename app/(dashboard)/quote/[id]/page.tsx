@@ -13,6 +13,7 @@ import type { QuoteFile } from '@/store/services/quote/types'
 import { ArrowLeftOutlined, CheckOutlined, CloseOutlined } from '@/components/common/antd/icons'
 import { formatQuoteNumber } from '@/utils/formatters'
 import QuoteFileLineItemsTable from '@/components/quote/QuoteFileLineItemsTable'
+import ProfitabilityTab from '@/components/quote/ProfitabilityTab'
 
 
 const getDisplayFileName = (name: string | null | undefined): string =>
@@ -109,12 +110,14 @@ const QuoteDetailsPage = () => {
         [filesWithRenderableTables],
     )
     const profitabilityFiles = useMemo(
-        () => filesWithRenderableTables.filter((file) => Boolean(file.is_Verifed)),
-        [filesWithRenderableTables],
+        () => files.filter((file) => Boolean(file.is_Verifed)),
+        [files],
     )
     const visibleFiles = activeTab === 'review' ? reviewFiles : profitabilityFiles
 
     const lineItemCount = data?.counts?.lineItemCount ?? 0
+    const reviewLineItemCount = data?.counts?.reviewLineItemCount ?? 0
+    const profitabilityLineItemCount = data?.counts?.profitabilityLineItemCount ?? 0
 
     const collapseItems = useMemo(() => visibleFiles.map((file: QuoteFile) => {
         const fileLineItemCount = file.lineItemCount ?? 0
@@ -323,18 +326,22 @@ const QuoteDetailsPage = () => {
                     </div>
                 </div>
 
-                <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-4">
                     <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Files</p>
                         <p className="mt-2 text-2xl font-semibold text-slate-900">{filesWithRenderableTables.length}</p>
                     </div>
                     <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Line Items</p>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Total Line Items</p>
                         <p className="mt-2 text-2xl font-semibold text-slate-900">{lineItemCount}</p>
                     </div>
                     <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Status</p>
-                        <p className="mt-2 text-sm font-semibold text-slate-900">{data?.quote?.status ?? 'N/A'}</p>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Review Items</p>
+                        <p className="mt-2 text-2xl font-semibold text-slate-900">{reviewLineItemCount}</p>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Profitability Items</p>
+                        <p className="mt-2 text-2xl font-semibold text-slate-900">{profitabilityLineItemCount}</p>
                     </div>
                 </div>
             </div>
@@ -380,11 +387,23 @@ const QuoteDetailsPage = () => {
 
                 {loading && <p className="mt-3 text-sm text-slate-500">Loading files...</p>}
 
-                {!loading && !visibleFiles.length && (
+                {!loading && activeTab === 'profitability' && (
+                    profitabilityFiles.length === 0 ? (
+                        <p className="mt-3 text-sm text-slate-500">No verified files found for this quote.</p>
+                    ) : (
+                        quoteId && (
+                            <div className="mt-4">
+                                <ProfitabilityTab quoteId={quoteId} profitabilityFiles={profitabilityFiles} />
+                            </div>
+                        )
+                    )
+                )}
+
+                {!loading && activeTab === 'review' && !reviewFiles.length && (
                     <p className="mt-3 text-sm text-slate-500">No files found for this quote.</p>
                 )}
 
-                {!loading && visibleFiles.length > 0 && (
+                {!loading && activeTab === 'review' && reviewFiles.length > 0 && (
                     <Collapse
                         key={collapseKey}
                         className="quote-files-collapse"

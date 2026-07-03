@@ -1,14 +1,27 @@
 import { baseApi } from '../baseApi'
 import type {
 	AddQuoteFilesPayload,
+	BulkDeleteLineItemsPayload,
+	BulkDeleteLineItemsResponse,
+	BulkDeleteProfitabilityPayload,
+	BulkProfitabilityDeleteResponse,
+	BulkProfitabilityUpdateResponse,
+	BulkUpdateLineItemsPayload,
+	BulkUpdateLineItemsResponse,
+	BulkUpdateProfitabilityPayload,
 	CreateLineItemPayload,
 	CreateLineItemResponse,
 	CreateQuotePayload,
 	DeleteLineItemPayload,
 	DeleteLineItemResponse,
+	DeleteProfitabilityLineItemPayload,
+	DeleteProfitabilityLineItemResponse,
 	GetLineItemsPayload,
+	GetProfitabilityLineItemsPayload,
 	LineItem,
 	LineItemsResponse,
+	ProfitabilityLineItem,
+	ProfitabilityLineItemsResponse,
 	QuoteDetail,
 	QuoteDetailResponse,
 	QuoteListItem,
@@ -150,6 +163,91 @@ export const quoteApi = baseApi.injectEndpoints({
 				{ type: 'LineItem' as const, id: arg.quoteFileId },
 			],
 		}),
+		bulkDeleteLineItems: builder.mutation<{ count: number; ids: string[] }, BulkDeleteLineItemsPayload>({
+			query: ({ quoteId, quoteFileId, lineItemIds }) => ({
+				url: `api/quotes/${quoteId}/files/${quoteFileId}/line-items/bulk`,
+				method: 'DELETE',
+				body: { lineItemIds },
+			}),
+			transformResponse: (response: BulkDeleteLineItemsResponse) => response.data,
+			invalidatesTags: (_result, _error, arg) => [
+				{ type: 'QuoteFileLineItems' as const, id: arg.quoteFileId },
+				{ type: 'QuoteDetail' as const, id: arg.quoteId },
+				{ type: 'LineItem' as const, id: `${arg.quoteId}-${arg.quoteFileId}` },
+				{ type: 'LineItem' as const, id: arg.quoteFileId },
+			],
+		}),
+		bulkUpdateLineItems: builder.mutation<{ count: number; lineItems: LineItem[] }, BulkUpdateLineItemsPayload>({
+			query: ({ quoteId, quoteFileId, lineItemIds, data }) => ({
+				url: `api/quotes/${quoteId}/files/${quoteFileId}/line-items/bulk`,
+				method: 'PATCH',
+				body: { lineItemIds, data },
+			}),
+			transformResponse: (response: BulkUpdateLineItemsResponse) => response.data,
+			invalidatesTags: (_result, _error, arg) => [
+				{ type: 'QuoteFileLineItems' as const, id: arg.quoteFileId },
+				{ type: 'QuoteDetail' as const, id: arg.quoteId },
+				{ type: 'LineItem' as const, id: `${arg.quoteId}-${arg.quoteFileId}` },
+				{ type: 'LineItem' as const, id: arg.quoteFileId },
+			],
+		}),
+		// ── Profitability line items ───────────────────────────────────────────
+		getProfitabilityLineItems: builder.query<ProfitabilityLineItem[], GetProfitabilityLineItemsPayload>({
+			query: ({ quoteId, quoteFileId }) =>
+				`api/quotes/${quoteId}/files/${quoteFileId}/profitability-items`,
+			transformResponse: (response: ProfitabilityLineItemsResponse) => response.data.lineItems,
+			providesTags: (_result, _error, arg) => [
+				{ type: 'ProfitabilityItem' as const, id: arg.quoteFileId },
+				{ type: 'ProfitabilityItem' as const, id: `${arg.quoteId}-${arg.quoteFileId}` },
+			],
+		}),
+		bulkUpdateProfitabilityLineItems: builder.mutation<
+			{ count: number; lineItems: ProfitabilityLineItem[] },
+			BulkUpdateProfitabilityPayload
+		>({
+			query: ({ quoteId, quoteFileId, lineItemIds, data }) => ({
+				url: `api/quotes/${quoteId}/files/${quoteFileId}/profitability-items/bulk`,
+				method: 'PATCH',
+				body: { lineItemIds, data },
+			}),
+			transformResponse: (response: BulkProfitabilityUpdateResponse) => response.data,
+			invalidatesTags: (_result, _error, arg) => [
+				{ type: 'ProfitabilityItem' as const, id: arg.quoteFileId },
+				{ type: 'ProfitabilityItem' as const, id: `${arg.quoteId}-${arg.quoteFileId}` },
+				{ type: 'QuoteDetail' as const, id: arg.quoteId },
+				{ type: 'Quote' as const, id: arg.quoteId },
+			],
+		}),
+		bulkDeleteProfitabilityLineItems: builder.mutation<
+			{ count: number; ids: string[] },
+			BulkDeleteProfitabilityPayload
+		>({
+			query: ({ quoteId, quoteFileId, lineItemIds }) => ({
+				url: `api/quotes/${quoteId}/files/${quoteFileId}/profitability-items/bulk`,
+				method: 'DELETE',
+				body: { lineItemIds },
+			}),
+			transformResponse: (response: BulkProfitabilityDeleteResponse) => response.data,
+			invalidatesTags: (_result, _error, arg) => [
+				{ type: 'ProfitabilityItem' as const, id: arg.quoteFileId },
+				{ type: 'ProfitabilityItem' as const, id: `${arg.quoteId}-${arg.quoteFileId}` },
+				{ type: 'QuoteDetail' as const, id: arg.quoteId },
+				{ type: 'Quote' as const, id: arg.quoteId },
+			],
+		}),
+		deleteProfitabilityLineItem: builder.mutation<{ id: string }, DeleteProfitabilityLineItemPayload>({
+			query: ({ quoteId, quoteFileId, itemId }) => ({
+				url: `api/quotes/${quoteId}/files/${quoteFileId}/profitability-items/${itemId}`,
+				method: 'DELETE',
+			}),
+			transformResponse: (response: DeleteProfitabilityLineItemResponse) => response.data,
+			invalidatesTags: (_result, _error, arg) => [
+				{ type: 'ProfitabilityItem' as const, id: arg.quoteFileId },
+				{ type: 'ProfitabilityItem' as const, id: `${arg.quoteId}-${arg.quoteFileId}` },
+				{ type: 'QuoteDetail' as const, id: arg.quoteId },
+				{ type: 'Quote' as const, id: arg.quoteId },
+			],
+		}),
 	}),
 	overrideExisting: false,
 })
@@ -165,4 +263,10 @@ export const {
 	useCreateLineItemMutation,
 	useUpdateLineItemMutation,
 	useDeleteLineItemMutation,
+	useBulkDeleteLineItemsMutation,
+	useBulkUpdateLineItemsMutation,
+	useGetProfitabilityLineItemsQuery,
+	useBulkUpdateProfitabilityLineItemsMutation,
+	useBulkDeleteProfitabilityLineItemsMutation,
+	useDeleteProfitabilityLineItemMutation,
 } = quoteApi
