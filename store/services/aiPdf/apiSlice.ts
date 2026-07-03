@@ -23,9 +23,9 @@ export const aiPdfApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result
           ? [
-              { type: 'Pdfs' as const, id: 'AI-PDF-LIST' },
-              ...result.map((u) => ({ type: 'Pdfs' as const, id: `AI-PDF-${u.id}` })),
-            ]
+            { type: 'Pdfs' as const, id: 'AI-PDF-LIST' },
+            ...result.map((u) => ({ type: 'Pdfs' as const, id: `AI-PDF-${u.id}` })),
+          ]
           : [{ type: 'Pdfs' as const, id: 'AI-PDF-LIST' }],
     }),
 
@@ -55,12 +55,17 @@ export const aiPdfApi = baseApi.injectEndpoints({
       query: ({ uploadId, payload }) => ({
         url: `api/aipdf/${uploadId}/sync`,
         method: 'PUT',
-        body: normalizeSyncPayload(payload.tables),
+        body: {
+          ...normalizeSyncPayload(payload.tables),
+          ...(payload.quoteId ? { quoteId: payload.quoteId } : {}),
+          ...(payload.quoteFileId ? { quoteFileId: payload.quoteFileId } : {}),
+        },
       }),
       transformResponse: (response: AiPdfSyncResponse) => response.data,
       invalidatesTags: (_result, _error, { uploadId }) => [
         { type: 'Pdfs' as const, id: `AI-PDF-${uploadId}` },
         { type: 'Pdfs' as const, id: 'AI-PDF-LIST' },
+        { type: 'Quote' as const, id: 'LIST' },  
       ],
     }),
 

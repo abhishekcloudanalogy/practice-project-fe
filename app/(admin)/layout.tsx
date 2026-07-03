@@ -1,7 +1,17 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import AdminHeader from "@/components/layout/AdminHeader";
 import Sidebar from "@/components/layout/Sidebar";
 import { SidebarProvider } from "@/store/features/dashboard/sidebarContext";
+
+export const metadata: Metadata = {
+  title: {
+    default: "Admin",
+    template: "%s | CloudAnalogy Admin",
+  },
+  description: "CloudAnalogy administration portal for managing partners, forms, and platform settings.",
+  robots: { index: false, follow: false },
+};
 
 export default function AdminGroupLayout({ children }: { children: ReactNode }) {
   return (

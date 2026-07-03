@@ -12,27 +12,30 @@ type DashboardLayoutProps = {
 }
 
 export const metadata: Metadata = {
-  title: 'Dashboard',
-  description: 'A simple ui for Dashboard',
+  title: {
+    default: 'Dashboard',
+    template: '%s | CloudAnalogy',
+  },
+  description: 'Manage your quotes, customers, contacts, and opportunities from your CloudAnalogy dashboard.',
+  robots: { index: false, follow: false },
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <div className="min-h-[calc(100vh-var(--navbar-height))] bg-slate-50 text-slate-900">
-      <Navbar />
-      <Sidebar />
-
-      <main
-        className="w-full transition-[padding-left] duration-200 pl-0 md:pl-[var(--sidebar-width,92px)]"
-        style={{
-          paddingTop: 'var(--navbar-height)',
-          minHeight: 'calc(100vh - var(--navbar-height) )',
-        }}
-      >
-        <div className="overflow-x-hidden">
+    <SidebarProvider>
+      <div className="min-h-[calc(100vh-var(--navbar-height))] bg-slate-50 text-slate-900">
+        <DashboardHeader />
+        <Sidebar />
+        <main
+          className="w-full overflow-x-hidden pt-(--navbar-height) transition-[padding-left] duration-200"
+          style={{
+            paddingLeft: 'var(--sidebar-width, 92px)',
+            minHeight: 'calc(100vh - var(--navbar-height))',
+          }}
+        >
           {children}
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </SidebarProvider>
   )
 }

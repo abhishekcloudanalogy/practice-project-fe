@@ -201,7 +201,7 @@ const OpportunityPage = () => {
                     <Button
                         variant="icon-button-2"
                         onClick={() => handleDelete(record.id)}
-                        className="!bg-red-50 !border !border-red-200 !w-10 !h-7"
+                        className="bg-red-50! border! border-red-200! w-10! h-7!"
                     >
                         <DeleteOutlined />
                     </Button>

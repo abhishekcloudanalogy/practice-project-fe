@@ -129,6 +129,12 @@ const variantStyles: Record<AppButtonVariant, CSSProperties> = {
     borderColor: '#e2e8f0',
     color: '#64748b',
   },
+  bgclear: {
+    ...baseStyles,
+    background: 'transparent',
+    boxShadow: 'none',
+    color: '#64748b',
+  },
   dashed: {
     ...baseStyles,
     borderStyle: 'dashed',
@@ -162,6 +168,7 @@ export function getAntdType(variant: SharedButtonVariant | string): ButtonProps[
       return 'primary'
     case 'ghost':
     case 'text':
+    case 'bgclear':
       return 'text'
     case 'dashed':
       return 'dashed'

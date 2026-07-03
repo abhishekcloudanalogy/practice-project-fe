@@ -23,8 +23,10 @@ import { HiAdjustmentsHorizontal } from "react-icons/hi2";
 import { MdArrowBack, MdArrowForward, MdClose } from 'react-icons/md'
 import Drawer from '@/components/common/Drawer'
 import SiderComponent from '@/components/common/Sidebar'
+import Button from '@/components/common/Button'
 import {
   FilePdfOutlined,
+  FileTextOutlined,
 } from "@/components/common/antd/icons"
 import {
   BrandBlock,
@@ -50,29 +52,30 @@ import Tooltip from '@/components/common/Tooltip'
 const itemsByRole: Record<UserRole, SidebarItem[]> = {
   user: [
     { key: 'home', label: 'Home', icon: <MdHome size={20} />, href: '/dashboard' },
-    { key: 'quote', label: 'HotTables', icon: <MdDescription size={20} />, href: '/hottables' },
+    { key: 'aipdf', label: 'HotTables', icon: <MdDescription size={20} />, href: '/hottables' },
     { key: 'pdf', label: 'PDF Extraction', icon: <FilePdfOutlined />, href: '/pdf' },
-    { key: 'customers', label: 'Customers', icon: <MdGroup size={20} />, href: '/customer' },
-      { key: 'opportunity', label: 'opportunity', icon: <MdTrendingUp size={20} />, href: '/opportunity' },
+    { key: 'quote', label: 'Quotes', icon: <FileTextOutlined size={20} />, href: '/quote' },
     { key: 'contacts', label: 'Contacts', icon: <MdPerson size={20} />, href: '/contact' },
+    { key: 'customers', label: 'Customers', icon: <MdGroup size={20} />, href: '/customer' },
+    { key: 'opportunity', label: 'opportunity', icon: <MdTrendingUp size={20} />, href: '/opportunity' },
     { key: 'order', label: 'Order', icon: <MdShoppingCart size={20} /> },
   ],
   admin: [
-    { key: 'dashboard',  label: 'Dashboard',   icon: <MdDashboard size={20} />,        href: '/admin' },
-    { key: 'users',      label: 'Users',        icon: <MdPeople size={20} /> },
-    { key: 'contacts',   label: 'Contacts',     icon: <MdPerson size={20} />,           href: '/contact' },
-    { key: 'partners',   label: 'Partners',     icon: <FaHandshake size={20} />,          href: '/adminPartner' },
-    { key: 'dealregai',  label: 'DealRegAi',   icon: <HiAdjustmentsHorizontal size={20} />,            href: '/dealRegAi' },
-    { key: 'manage',     label: 'Manage',       icon: <MdManageAccounts size={20} /> },
-    { key: 'settings',   label: 'Settings',     icon: <MdSettings size={20} /> },
+    { key: 'dashboard', label: 'Dashboard', icon: <MdDashboard size={20} />, href: '/admin' },
+    { key: 'users', label: 'Users', icon: <MdPeople size={20} /> },
+    { key: 'contacts', label: 'Contacts', icon: <MdPerson size={20} />, href: '/contact' },
+    { key: 'partners', label: 'Partners', icon: <FaHandshake size={20} />, href: '/adminPartner' },
+    { key: 'dealregai', label: 'DealRegAi', icon: <HiAdjustmentsHorizontal size={20} />, href: '/dealRegAi' },
+    { key: 'manage', label: 'Manage', icon: <MdManageAccounts size={20} /> },
+    { key: 'settings', label: 'Settings', icon: <MdSettings size={20} /> },
   ],
   super_admin: [
-    { key: 'dashboard',   label: 'Dashboard',    icon: <MdDashboard size={20} />,          href: '/admin' },
-    { key: 'users',       label: 'Users',         icon: <MdSupervisorAccount size={20} /> },
-    { key: 'contacts',    label: 'Contacts',      icon: <MdPerson size={20} />,             href: '/contact' },
-    { key: 'partners',   label: 'Partners',     icon: <FaHandshake size={20} />,          href: '/superAdminPartner' },
-    { key: 'security',    label: 'Security',      icon: <MdSecurity size={20} /> },
-    { key: 'settings',    label: 'Settings',      icon: <MdSettings size={20} /> },
+    { key: 'dashboard', label: 'Dashboard', icon: <MdDashboard size={20} />, href: '/admin' },
+    { key: 'users', label: 'Users', icon: <MdSupervisorAccount size={20} /> },
+    { key: 'contacts', label: 'Contacts', icon: <MdPerson size={20} />, href: '/contact' },
+    { key: 'partners', label: 'Partners', icon: <FaHandshake size={20} />, href: '/superAdminPartner' },
+    { key: 'security', label: 'Security', icon: <MdSecurity size={20} /> },
+    { key: 'settings', label: 'Settings', icon: <MdSettings size={20} /> },
   ],
 }
 
@@ -138,22 +141,22 @@ const Sidebar = () => {
         placement="left"
         size="default"
         closable={false}
+        zIndex={9999}
       >
         <DrawerBrandBlock>
-          <BrandMark>PM</BrandMark>
+
           <BrandCopy>
-            <BrandTitle>Project May</BrandTitle>
+            <BrandTitle>Explorer</BrandTitle>
             <BrandSubtitle>Welcome</BrandSubtitle>
           </BrandCopy>
-          <button
-            type="button"
+          <Button
+            htmlType="button"
+            variant="bgclear"
             onClick={closeMobile}
             aria-label="Close navigation"
+            icon={<MdClose size={18} />}
             style={{
               marginLeft: 'auto',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               height: 32,
               width: 32,
               borderRadius: 8,
@@ -162,9 +165,7 @@ const Sidebar = () => {
               color: '#64748b',
               flexShrink: 0,
             }}
-          >
-            <MdClose size={18} />
-          </button>
+          />
         </DrawerBrandBlock>
         <DrawerSidebarNav>{drawerNav}</DrawerSidebarNav>
       </Drawer>
@@ -180,10 +181,10 @@ const Sidebar = () => {
       >
         <SidebarHeader $collapsed={collapsed}>
           <BrandBlock $collapsed={collapsed}>
-            {!collapsed && <BrandMark>PM</BrandMark>}
+
             {!collapsed && (
               <BrandCopy>
-                <BrandTitle>Project May</BrandTitle>
+                <BrandTitle>Explorer</BrandTitle>
                 <BrandSubtitle>Welcome</BrandSubtitle>
               </BrandCopy>
             )}
