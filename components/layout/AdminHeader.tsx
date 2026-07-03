@@ -22,7 +22,7 @@ import Button from "@/components/common/Button";
 const AdminAvatar = ({ size = 36 }: { size?: number }) => (
   <div
     style={{ width: size, height: size }}
-    className="flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-sm"
+    className="flex shrink-0 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-indigo-600 text-white shadow-sm"
   >
     <MdAdminPanelSettings size={Math.round(size * 0.55)} />
   </div>
@@ -115,7 +115,7 @@ const AdminHeader = () => {
   }, []);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 h-[var(--navbar-height)] border-b border-slate-200 bg-white shadow-sm">
+    <header className="fixed inset-x-0 top-0 z-40 h-(--navbar-height) border-b border-slate-200 bg-white shadow-sm">
       <div className="flex h-full items-center justify-between px-4 sm:px-6">
         {/* Left */}
         <div className="flex items-center gap-3">
@@ -170,7 +170,7 @@ const AdminHeader = () => {
               <AdminAvatar size={36} />
             )}
 
-            <div className="max-w-[180px]">
+            <div className="max-w-45">
               <p className="truncate text-sm font-medium text-slate-900">
                 {displayName}
               </p>
