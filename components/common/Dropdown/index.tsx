@@ -6,8 +6,12 @@ import type { MenuProps } from 'antd'
 import { StyledDropdownWrapper } from './styles'
 import type { AppDropdownProps } from './types'
 
-const Dropdown = ({ menuItems, trigger = ['hover'], placement = 'bottomRight', children }: AppDropdownProps) => {
-  const normalizedTrigger =
+type DropdownTrigger = NonNullable<AppDropdownProps['trigger']>
+
+const DEFAULT_TRIGGER: DropdownTrigger = ['hover']
+
+const Dropdown = ({ menuItems, trigger = DEFAULT_TRIGGER, placement = 'bottomRight', children }: AppDropdownProps) => {
+  const normalizedTrigger: DropdownTrigger =
     trigger.includes('hover') && !trigger.includes('click')
       ? ['hover', 'click']
       : trigger

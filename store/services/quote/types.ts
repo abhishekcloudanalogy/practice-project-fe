@@ -9,6 +9,8 @@ export type QuoteListItem = {
 	fileCount: number
 	lineItemCount: number
 	createdAt?: string | null
+	customerName?: string | null
+	opportunityTitle?: string | null
 }
 
 export type QuoteMutationQuote = {
@@ -142,6 +144,8 @@ export type QuoteDetail = {
 export type CreateQuotePayload = {
 	name: string
 	files: File[]
+	customerId?: string
+	opportunityId?: string
 }
 
 export type AddQuoteFilesPayload = {
@@ -183,7 +187,103 @@ export type BulkUpdateLineItemsResponse = {
 
 // ── Profitability line items ─────────────────────────────────────────────────
 
-export type ProfitabilityLineItem = LineItem
+export type ProfitabilityLineItem = LineItem & {
+	rowSourceId: string | null
+	is_Verifed: boolean
+	customer_id: string | null
+	organization: string | null
+	product_id: number | null
+	bundle_id: number | null
+	adjusted_quantity: string | null
+	availability: string | null
+	line_amount: string | null
+	list_price: string | null
+	adjusted_price: string | null
+	serial_: string | null
+	pdf_url: string | null
+	eventId: number | null
+	quote_config_id: number | null
+	subscriptionId: number | null
+	portalId: number | null
+	occurredAt: number | null
+	subscriptionType: string | null
+	attemptNumber: number | null
+	objectId: number | null
+	changeSource: string | null
+	changeFlag: string | null
+	appId: number | null
+	bundle_cost: string | null
+	bundle_ext_price: string | null
+	bundle_gp: string | null
+	bundle_gp_percentage: string | null
+	bundle_msrp: string | null
+	bundle_name: string | null
+	bundle_rebate: string | null
+	bundle_rebate_amount: string | null
+	bundle_unit_price: string | null
+	clin: string | null
+	contract_fee_percentage: string | null
+	contract_fee_amount: string | null
+	country_of_origin: string | null
+	display_mpn: string | null
+	end_date: string | null
+	energy_star_flag: string | null
+	eol_date: string | null
+	epeat_flag: string | null
+	equivalent_clin: string | null
+	excel_bundle_name: string | null
+	file_name: string | null
+	gsa_price: string | null
+	model_id: string | null
+	mpn: string | null
+	ndr_cost: string | null
+	unit_price: string | null
+	oem: string | null
+	oem_name: string | null
+	partner_fee_percentage: string | null
+	partner_fee_amount: string | null
+	serial_number: string | null
+	service_duration: string | null
+	ss_part: string | null
+	start_date: string | null
+	subscription_term: string | null
+	taa_flag: string | null
+	td_number: string | null
+	unspsc: string | null
+	vendor_line_number: string | null
+	vendor_quote_line_item: string | null
+	vendor_disti: string | null
+	vendor_disti_name: string | null
+	months: string | null
+	sub_total: string | null
+	total_cost: string | null
+	product_name: string | null
+	use_line_amount: boolean
+	term_months: string | null
+	term_years: string | null
+	term_unit_calc: string | null
+	total_cost_to_use: string | null
+	lead_time: string | null
+	Discount_Class__c: string | null
+	Discount_Subclass__c: string | null
+	vendor_quote_number: string | null
+	manufacturer_product_code: string | null
+	vendor_product_code: string | null
+	sku: string | null
+	distributor_product_code: string | null
+	discount_percentage: string | null
+	extended_list: string | null
+	esi_price: string | null
+	pricing_method: string | null
+	item_category_code: string | null
+	ma_flag: string | null
+	gross_profit_percentage: number | null
+	gross_profit: number | null
+	msrp: string | null
+	optional: boolean
+}
+
+export type ProfitabilityEditableValue = string | number | boolean | Record<string, unknown> | null
 
 export type GetProfitabilityLineItemsPayload = {
 	quoteId: string
@@ -199,11 +299,7 @@ export type BulkUpdateProfitabilityPayload = {
 	quoteId: string
 	quoteFileId: string
 	lineItemIds: string[]
-	data: Partial<Pick<LineItem,
-		| 'lineNumber' | 'itemCode' | 'employeeId' | 'employeeName' | 'description'
-		| 'department' | 'category' | 'email' | 'phone' | 'salary' | 'quantity'
-		| 'unitPrice' | 'amount' | 'currency' | 'status' | 'referenceNo' | 'location' | 'notes'
-	>>
+	data: Partial<Record<keyof ProfitabilityLineItem, ProfitabilityEditableValue>>
 }
 
 export type BulkDeleteProfitabilityPayload = {
