@@ -20,20 +20,20 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
   title: {
-    default: "CloudAnalogy | Quote & CRM Platform",
+    default: "CloudAnalogy Inventory Management",
     template: "%s | CloudAnalogy",
   },
   description:
-    "CloudAnalogy is an intelligent quote management and CRM platform — manage customers, opportunities, PDF extractions, and profitability in one place.",
-  keywords: ["quote management", "CRM", "PDF extraction", "profitability", "business tool"],
+    "CloudAnalogy is an intelligent inventory management platform — manage products, stock levels, suppliers, and more in one place.",
+  keywords: ["inventory management", "product management", "stock levels", "suppliers", "business tool"],
   authors: [{ name: "CloudAnalogy" }],
   creator: "CloudAnalogy",
   robots: { index: false, follow: false },
   openGraph: {
     type: "website",
     siteName: "CloudAnalogy",
-    title: "CloudAnalogy | Quote & CRM Platform",
-    description: "Intelligent quote management and CRM platform.",
+    title: "CloudAnalogy | Inventory Management Platform",
+    description: "Intelligent inventory management platform.",
     locale: "en_US",
   },
   icons: {

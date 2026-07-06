@@ -27,6 +27,9 @@ import Button from '@/components/common/Button'
 import {
   FilePdfOutlined,
   FileTextOutlined,
+  ScheduleFilled,
+  ScheduleOutlined,
+
 } from "@/components/common/antd/icons"
 import {
   BrandBlock,
@@ -42,7 +45,7 @@ import {
   ItemLabel,
   SidebarButton,
   SidebarHeader,
-  SidebarLink,
+  SidebarLink, 
   SidebarNav,
   ToggleButton,
 } from '@/components/common/Sidebar/styles'
@@ -52,12 +55,13 @@ import Tooltip from '@/components/common/Tooltip'
 const itemsByRole: Record<UserRole, SidebarItem[]> = {
   user: [
     { key: 'home', label: 'Home', icon: <MdHome size={20} />, href: '/dashboard' },
-    { key: 'aipdf', label: 'HotTables', icon: <MdDescription size={20} />, href: '/hottables' },
-    { key: 'pdf', label: 'PDF Extraction', icon: <FilePdfOutlined />, href: '/pdf' },
     { key: 'quote', label: 'Quotes', icon: <FileTextOutlined size={20} />, href: '/quote' },
+    { key: '  scheduler', label: 'Scheduler', icon: <ScheduleFilled/>, href: '/scheduler' },
     { key: 'contacts', label: 'Contacts', icon: <MdPerson size={20} />, href: '/contact' },
     { key: 'customers', label: 'Customers', icon: <MdGroup size={20} />, href: '/customer' },
     { key: 'opportunity', label: 'opportunity', icon: <MdTrendingUp size={20} />, href: '/opportunity' },
+    { key: 'aipdf', label: 'HotTables', icon: <MdDescription size={20} />, href: '/hottables' },
+    { key: 'pdf', label: 'PDF Extraction', icon: <FilePdfOutlined />, href: '/pdf' },
     { key: 'order', label: 'Order', icon: <MdShoppingCart size={20} /> },
   ],
   admin: [
