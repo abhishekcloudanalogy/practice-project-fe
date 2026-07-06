@@ -78,8 +78,147 @@ const ALL_KNOWN_COLUMNS: ColDef[] = [
     { key: 'notes',        title: 'Notes' },
 ];
 
-// lineNumber is used for sorting but never rendered as a column
-const HIDDEN_COLUMN_KEYS = new Set<keyof ApiProfItem>(['lineNumber']);
+const PROFITABILITY_FIELD_DEFS: FieldDef[] = [
+    ...ALL_KNOWN_COLUMNS.map((col) => ({ key: col.key, title: col.title })),
+    { key: 'sourceTableTitle', title: 'Source Table Title' },
+    { key: 'rowSourceId', title: 'Row Source ID' },
+    { key: 'rowIndex', title: 'Row Index' },
+    { key: 'extraFields', title: 'Extra Fields' },
+    { key: 'is_Verifed', title: 'Is Verified' },
+    { key: 'customer_id', title: 'Customer ID' },
+    { key: 'organization', title: 'Organization' },
+    { key: 'product_id', title: 'Product ID' },
+    { key: 'bundle_id', title: 'Bundle ID' },
+    { key: 'adjusted_quantity', title: 'Adjusted Quantity' },
+    { key: 'availability', title: 'Availability' },
+    { key: 'line_amount', title: 'Line Amount' },
+    { key: 'list_price', title: 'List Price' },
+    { key: 'adjusted_price', title: 'Adjusted Price' },
+    { key: 'serial_', title: 'Serial' },
+    { key: 'eventId', title: 'Event ID' },
+    { key: 'quote_config_id', title: 'Quote Config ID' },
+    { key: 'subscriptionId', title: 'Subscription ID' },
+    { key: 'portalId', title: 'Portal ID' },
+    { key: 'occurredAt', title: 'Occurred At' },
+    { key: 'subscriptionType', title: 'Subscription Type' },
+    { key: 'attemptNumber', title: 'Attempt Number' },
+    { key: 'objectId', title: 'Object ID' },
+    { key: 'changeSource', title: 'Change Source' },
+    { key: 'changeFlag', title: 'Change Flag' },
+    { key: 'appId', title: 'App ID' },
+    { key: 'bundle_cost', title: 'Bundle Cost' },
+    { key: 'bundle_ext_price', title: 'Bundle Ext Price' },
+    { key: 'bundle_gp', title: 'Bundle GP' },
+    { key: 'bundle_gp_percentage', title: 'Bundle GP Percentage' },
+    { key: 'bundle_msrp', title: 'Bundle MSRP' },
+    { key: 'bundle_name', title: 'Bundle Name' },
+    { key: 'bundle_rebate', title: 'Bundle Rebate' },
+    { key: 'bundle_rebate_amount', title: 'Bundle Rebate Amount' },
+    { key: 'bundle_unit_price', title: 'Bundle Unit Price' },
+    { key: 'clin', title: 'CLIN' },
+    { key: 'contract_fee_percentage', title: 'Contract Fee Percentage' },
+    { key: 'contract_fee_amount', title: 'Contract Fee Amount' },
+    { key: 'country_of_origin', title: 'Country Of Origin' },
+    { key: 'display_mpn', title: 'Display MPN' },
+    { key: 'end_date', title: 'End Date' },
+    { key: 'energy_star_flag', title: 'Energy Star Flag' },
+    { key: 'eol_date', title: 'EOL Date' },
+    { key: 'epeat_flag', title: 'EPEAT Flag' },
+    { key: 'equivalent_clin', title: 'Equivalent CLIN' },
+    { key: 'excel_bundle_name', title: 'Excel Bundle Name' },
+    { key: 'file_name', title: 'File Name' },
+    { key: 'gsa_price', title: 'GSA Price' },
+    { key: 'model_id', title: 'Model ID' },
+    { key: 'mpn', title: 'MPN' },
+    { key: 'ndr_cost', title: 'NDR Cost' },
+    { key: 'unit_price', title: 'Unit Price Extended' },
+    { key: 'oem', title: 'OEM' },
+    { key: 'oem_name', title: 'OEM Name' },
+    { key: 'partner_fee_percentage', title: 'Partner Fee Percentage' },
+    { key: 'partner_fee_amount', title: 'Partner Fee Amount' },
+    { key: 'serial_number', title: 'Serial Number' },
+    { key: 'service_duration', title: 'Service Duration' },
+    { key: 'ss_part', title: 'SS Part' },
+    { key: 'start_date', title: 'Start Date' },
+    { key: 'subscription_term', title: 'Subscription Term' },
+    { key: 'taa_flag', title: 'TAA Flag' },
+    { key: 'td_number', title: 'TD Number' },
+    { key: 'unspsc', title: 'UNSPSC' },
+    { key: 'vendor_line_number', title: 'Vendor Line Number' },
+    { key: 'vendor_quote_line_item', title: 'Vendor Quote Line Item' },
+    { key: 'vendor_disti', title: 'Vendor Disti' },
+    { key: 'vendor_disti_name', title: 'Vendor Disti Name' },
+    { key: 'months', title: 'Months' },
+    { key: 'sub_total', title: 'Sub Total' },
+    { key: 'total_cost', title: 'Total Cost' },
+    { key: 'product_name', title: 'Product Name' },
+    { key: 'use_line_amount', title: 'Use Line Amount' },
+    { key: 'term_months', title: 'Term Months' },
+    { key: 'term_years', title: 'Term Years' },
+    { key: 'term_unit_calc', title: 'Term Unit Calc' },
+    { key: 'total_cost_to_use', title: 'Total Cost To Use' },
+    { key: 'lead_time', title: 'Lead Time' },
+    { key: 'Discount_Class__c', title: 'Discount Class' },
+    { key: 'Discount_Subclass__c', title: 'Discount Subclass' },
+    { key: 'vendor_quote_number', title: 'Vendor Quote Number' },
+    { key: 'manufacturer_product_code', title: 'Manufacturer Product Code' },
+    { key: 'vendor_product_code', title: 'Vendor Product Code' },
+    { key: 'sku', title: 'SKU' },
+    { key: 'distributor_product_code', title: 'Distributor Product Code' },
+    { key: 'discount_percentage', title: 'Discount Percentage' },
+    { key: 'extended_list', title: 'Extended List' },
+    { key: 'esi_price', title: 'ESI Price' },
+    { key: 'pricing_method', title: 'Pricing Method' },
+    { key: 'item_category_code', title: 'Item Category Code' },
+    { key: 'ma_flag', title: 'MA Flag' },
+    { key: 'gross_profit_percentage', title: 'Gross Profit Percentage' },
+    { key: 'gross_profit', title: 'Gross Profit' },
+    { key: 'msrp', title: 'MSRP' },
+];
+
+const HIDDEN_BULK_EDIT_FIELD_KEYS = new Set<keyof ApiProfItem>([
+    'sourceTableTitle',
+    'rowSourceId',
+    'rowIndex',
+    'extraFields',
+    'is_Verifed',
+    'customer_id',
+    'product_id',
+    'bundle_id',
+    'eventId',
+    'quote_config_id',
+    'subscriptionId',
+    'portalId',
+    'occurredAt',
+    'subscriptionType',
+    'attemptNumber',
+    'objectId',
+    'changeSource',
+    'changeFlag',
+    'appId',
+    'file_name',
+    'use_line_amount',
+]);
+
+const PROFITABILITY_BULK_EDIT_FIELDS: FieldDef[] = PROFITABILITY_FIELD_DEFS.filter(
+    (field) => !HIDDEN_BULK_EDIT_FIELD_KEYS.has(field.key),
+);
+
+const PROFITABILITY_TABLE_COLUMNS: ColDef[] = PROFITABILITY_FIELD_DEFS.map((field) => {
+    const knownColumn = ALL_KNOWN_COLUMNS.find((col) => col.key === field.key);
+    return knownColumn ?? { key: field.key, title: field.title };
+});
+
+// Hidden in the rendered table only; fields can still be edited and returned by the API.
+const HIDDEN_COLUMN_KEYS = new Set<keyof ApiProfItem>([
+    'lineNumber',
+    'sourceTableTitle',
+    'rowSourceId',
+    'rowIndex',
+    'is_Verifed',
+    'use_line_amount',
+    'optional',
+]);
 
 const parseLineNumber = (value: unknown): number => {
     if (value === null || value === undefined) return Infinity;
@@ -103,7 +242,7 @@ const createBulkEditField = (): BulkEditFieldDraft => ({
 
 const matchesFilter = (item: RichProfItem, needle: string): boolean => {
     const hay = [
-        ...ALL_KNOWN_COLUMNS.map((col) => String(item[col.key] ?? '')),
+        ...PROFITABILITY_TABLE_COLUMNS.map((col) => String(item[col.key] ?? '')),
         item.__fileName,
     ].join(' ').toLowerCase();
     return hay.includes(needle);
@@ -111,9 +250,8 @@ const matchesFilter = (item: RichProfItem, needle: string): boolean => {
 
 const buildDynamicColumns = (
     items: RichProfItem[],
-    onDeleteRow: (item: RichProfItem) => void,
 ): ColumnsType<RichProfItem> => {
-    const knownCols = ALL_KNOWN_COLUMNS
+    const knownCols = PROFITABILITY_TABLE_COLUMNS
         .filter((col) => !HIDDEN_COLUMN_KEYS.has(col.key) && items.some((item) => isPresent(item[col.key])))
         .map((col) => ({
             title: col.title,
@@ -194,7 +332,9 @@ const ProfitabilityItemLoader: React.FC<{
     );
 
     const onLoadRef = useRef(onLoad);
-    onLoadRef.current = onLoad;
+    useEffect(() => {
+        onLoadRef.current = onLoad;
+    });
 
     useEffect(() => {
         onLoadRef.current({ fileId, items });
@@ -213,11 +353,10 @@ const ProfitabilityGroupSection = React.memo<{
     selectedRowKeys: string[];
     onSelectionChange: (fileId: string, keys: React.Key[]) => void;
     onDeleteRow: (item: RichProfItem) => void;
-}>(({ label, items, groupFileId, selectedRowKeys, onSelectionChange, onDeleteRow }) => {
+}>(({ label, items, groupFileId, selectedRowKeys, onSelectionChange }) => {
     const columns = useMemo(
-        () => buildDynamicColumns(items, onDeleteRow),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [items, onDeleteRow],
+        () => buildDynamicColumns(items),
+        [items],
     );
 
     const rowSelection = useMemo(
@@ -229,7 +368,6 @@ const ProfitabilityGroupSection = React.memo<{
                     onChange: (keys: React.Key[]) => onSelectionChange(groupFileId, keys),
                 }
                 : undefined,
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         [groupFileId, selectedRowKeys, onSelectionChange],
     );
 
@@ -337,17 +475,9 @@ const ProfitabilityTab: React.FC<Props> = ({ quoteId, profitabilityFiles }) => {
 
     const hasSelection = selectedRowKeys.length > 0 && activeFileId !== null;
 
-    const activeItems = useMemo(
-        () => (activeFileId ? allItems.filter((item) => item.__fileId === activeFileId) : []),
-        [activeFileId, allItems],
-    );
-
     const activeBulkEditFieldDefs = useMemo<FieldDef[]>(
-        () =>
-            ALL_KNOWN_COLUMNS
-                .filter((col) => activeItems.some((item) => isPresent(item[col.key])))
-                .map((col) => ({ key: col.key, title: col.title })),
-        [activeItems],
+        () => PROFITABILITY_BULK_EDIT_FIELDS,
+        [],
     );
 
     const [bulkUpdateProfItems, { isLoading: isBulkUpdating }] = useBulkUpdateProfitabilityLineItemsMutation();
@@ -541,6 +671,11 @@ const ProfitabilityTab: React.FC<Props> = ({ quoteId, profitabilityFiles }) => {
                                         size="large"
                                         value={field.fieldKey ?? undefined}
                                         placeholder="Select field"
+                                        showSearch
+                                        filterOption={(input, option) =>
+                                            String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                        }
+                                        listHeight={400}
                                         options={available.map((def) => ({ label: def.title, value: def.key }))}
                                         style={{ width: '100%' }}
                                         onChange={(val) => handleUpdateBulkEditField(field.id, { fieldKey: val as keyof ApiProfItem, value: '' })}

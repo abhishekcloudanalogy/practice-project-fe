@@ -34,11 +34,19 @@ import type {
 	VerifyQuoteFileResponse,
 } from './types'
 
-const buildQuoteFormData = (files: File[], name?: string) => {
+const buildQuoteFormData = (files: File[], name?: string, customerId?: string, opportunityId?: string) => {
 	const formData = new FormData()
 
 	if (typeof name === 'string') {
 		formData.append('name', name)
+	}
+
+	if (customerId) {
+		formData.append('customerId', customerId)
+	}
+
+	if (opportunityId) {
+		formData.append('opportunityId', opportunityId)
 	}
 
 	files.forEach((file) => {
@@ -85,10 +93,10 @@ export const quoteApi = baseApi.injectEndpoints({
 			],
 		}),
 		createQuote: builder.mutation<QuoteMutationData, CreateQuotePayload>({
-			query: ({ name, files }) => ({
+			query: ({ name, files, customerId, opportunityId }) => ({
 				url: 'api/quotes',
 				method: 'POST',
-				body: buildQuoteFormData(files, name),
+				body: buildQuoteFormData(files, name, customerId, opportunityId),
 			}),
 			transformResponse: (response: QuoteMutationResponse) => response.data,
 			invalidatesTags: (result) => quoteMutationTags(result?.quote?.id, result),
