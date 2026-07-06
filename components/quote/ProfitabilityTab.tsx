@@ -215,6 +215,7 @@ const HIDDEN_COLUMN_KEYS = new Set<keyof ApiProfItem>([
     'sourceTableTitle',
     'rowSourceId',
     'rowIndex',
+    'extraFields',
     'is_Verifed',
     'use_line_amount',
     'optional',
