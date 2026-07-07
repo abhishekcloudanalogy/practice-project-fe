@@ -267,6 +267,15 @@ function ShareLocation() {
     );
 }
 
+function MapClickHandler({ enabled, onClick }: { enabled: boolean; onClick: (pos: [number, number]) => void }) {
+    useMapEvents({
+        click(e) {
+            if (enabled) onClick([e.latlng.lat, e.latlng.lng]);
+        }
+    });
+    return null;
+}
+
 function MeasureTool({ enabled }: { enabled: boolean }) {
     const [pts, setPts] = useState<[number, number][]>([]);
     const [result, setResult] = useState('');
@@ -367,6 +376,7 @@ export default function MapClient() {
     const [showMiniMap, setShowMiniMap] = useState(false);
     const [zoomFit, setZoomFit] = useState(false);
     const [drawnPolygon, setDrawnPolygon] = useState<[number, number][] | null>(null);
+    const [clickedMarker, setClickedMarker] = useState<[number, number] | null>(null);
 
     useEffect(() => {
         import('leaflet').then((L) => {
@@ -502,6 +512,7 @@ export default function MapClient() {
                     <InvalidateSize />
                     <FlyToLocation position={flyTo} />
                     <MouseCoords />
+                    <MapClickHandler enabled={!reverseGeoMode && !routeMode && !measureMode} onClick={(pos) => { setClickedMarker(pos); setFlyTo(pos); }} />
                     <ReverseGeocode enabled={reverseGeoMode} />
                     <RoutePlanner enabled={routeMode} />
                     <MeasureTool enabled={measureMode} />
@@ -514,6 +525,7 @@ export default function MapClient() {
 
                     {markerIcon && <Marker position={[28.6139, 77.2090]} icon={markerIcon}><Popup>New Delhi</Popup></Marker>}
                     {markerIcon && userCoords && <Marker position={userCoords} icon={markerIcon}><Popup>📍 You are here</Popup></Marker>}
+                    {markerIcon && clickedMarker && <Marker position={clickedMarker} icon={markerIcon}><Popup>📍 {clickedMarker[0].toFixed(5)}, {clickedMarker[1].toFixed(5)}</Popup></Marker>}
                     {markerIcon && searchMarker && <Marker position={searchMarker} icon={markerIcon}><Popup>🔍 {searchQuery}</Popup></Marker>}
 
                     {showClusters && markerIcon && (
