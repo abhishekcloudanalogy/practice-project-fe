@@ -11,6 +11,7 @@ export * from './partnerForms/apiSlice'
 export * from './user/apiSlice'
 export * from './dealreg/apiSlice'
 export * from './opportunity/apiSlice'
+export * from './map/apiSlice'
 
 // Types
 export * from './types'

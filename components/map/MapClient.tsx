@@ -5,6 +5,7 @@ import { EditControl } from 'react-leaflet-draw';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import type { Map, Icon, FeatureGroup as FGType } from 'leaflet';
 import { useGeolocation } from './useGeolocation';
+import { useSaveLocationMutation } from '@/store/services/map/apiSlice';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import html2canvas from 'html2canvas';
@@ -377,6 +378,34 @@ export default function MapClient() {
     const [zoomFit, setZoomFit] = useState(false);
     const [drawnPolygon, setDrawnPolygon] = useState<[number, number][] | null>(null);
     const [clickedMarker, setClickedMarker] = useState<[number, number] | null>(null);
+    const [saveLocation, { isLoading: isSaving }] = useSaveLocationMutation();
+
+    const handleSaveCurrentLocation = async () => {
+        if (!userCoords) return;
+        try {
+            await saveLocation({ latitude: userCoords[0], longitude: userCoords[1] }).unwrap();
+            alert('✅ Current location saved!');
+        } catch {
+            alert('❌ Location save karne mein error aaya');
+        }
+    };
+
+    const handleSaveClickedLocation = async (pos: [number, number]) => {
+        let placeName = `${pos[0].toFixed(5)}, ${pos[1].toFixed(5)}`;
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos[0]}&lon=${pos[1]}&format=json`);
+            const data = await res.json();
+            if (data.display_name) placeName = data.display_name;
+        } catch { /* fallback to coords */ }
+        const confirmed = window.confirm(`Do you want to save this location?\n${placeName}`);
+        if (!confirmed) return;
+        try {
+            await saveLocation({ latitude: pos[0], longitude: pos[1], label: placeName }).unwrap();
+            alert('✅ Location saved!');
+        } catch {
+            alert('❌ Failed to save location');
+        }
+    };
 
     useEffect(() => {
         import('leaflet').then((L) => {
@@ -474,6 +503,12 @@ export default function MapClient() {
                 <button onClick={() => { getLocation(); }} disabled={locLoading} style={btn()}>
                     {locLoading ? '⏳...' : '📍 My Location'}
                 </button>
+                <button
+                    onClick={handleSaveCurrentLocation}
+                    disabled={!userCoords || isSaving}
+                    title={!userCoords ? 'Pehle My Location click karo' : 'Current location save karo'}
+                    style={{ ...btn(), opacity: !userCoords ? 0.4 : 1, cursor: !userCoords ? 'not-allowed' : 'pointer' }}
+                >💾 {isSaving ? 'Saving...' : 'Save Location'}</button>
                 {locError && <span style={{ color: 'red', fontSize: '12px' }}>{locError}</span>}
                 <button onClick={handleDownload} style={btn()}>⬇️ Download</button>
                 <button onClick={handlePrint} style={btn()}>🖨️ Print</button>
@@ -525,7 +560,30 @@ export default function MapClient() {
 
                     {markerIcon && <Marker position={[28.6139, 77.2090]} icon={markerIcon}><Popup>New Delhi</Popup></Marker>}
                     {markerIcon && userCoords && <Marker position={userCoords} icon={markerIcon}><Popup>📍 You are here</Popup></Marker>}
-                    {markerIcon && clickedMarker && <Marker position={clickedMarker} icon={markerIcon}><Popup>📍 {clickedMarker[0].toFixed(5)}, {clickedMarker[1].toFixed(5)}</Popup></Marker>}
+                    {markerIcon && clickedMarker && (
+                        <Marker
+                            position={clickedMarker}
+                            icon={markerIcon}
+                            draggable
+                            eventHandlers={{
+                                dragend(e) {
+                                    const { lat, lng } = e.target.getLatLng();
+                                    setClickedMarker([lat, lng]);
+                                }
+                            }}
+                        >
+                            <Popup>
+                                <div style={{ textAlign: 'center', minWidth: 160 }}>
+                                    <div style={{ marginBottom: 6, fontSize: 12 }}>📍 {clickedMarker[0].toFixed(5)}, {clickedMarker[1].toFixed(5)}</div>
+                                    <button
+                                        onClick={() => handleSaveClickedLocation(clickedMarker)}
+                                        disabled={isSaving}
+                                        style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#1677ff', color: '#fff', border: 'none', borderRadius: 4 }}
+                                    >💾 {isSaving ? 'Saving...' : 'Save this location'}</button>
+                                </div>
+                            </Popup>
+                        </Marker>
+                    )}
                     {markerIcon && searchMarker && <Marker position={searchMarker} icon={markerIcon}><Popup>🔍 {searchQuery}</Popup></Marker>}
 
                     {showClusters && markerIcon && (
