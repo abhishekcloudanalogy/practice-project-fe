@@ -8,7 +8,7 @@ import { useGeolocation } from './useGeolocation';
 import { useSaveLocationMutation } from '@/store/services/map/apiSlice';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 
 // ─── Tile Layers ──────────────────────────────────────────────────────────────
 const TILE_LAYERS: Record<string, { url: string; attribution: string }> = {
@@ -201,12 +201,28 @@ function FullscreenControl() {
     const [full, setFull] = useState(false);
     const toggle = () => {
         const el = map.getContainer().parentElement as HTMLElement;
-        el.style.cssText = full ? '' : 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999';
-        map.invalidateSize();
+        if (full) {
+            el.style.position = 'relative';
+            el.style.top = '';
+            el.style.left = '';
+            el.style.width = '';
+            el.style.height = '';
+            el.style.zIndex = '';
+        } else {
+            el.style.position = 'fixed';
+            el.style.top = '0';
+            el.style.left = '0';
+            el.style.width = '100vw';
+            el.style.height = '100vh';
+            el.style.zIndex = '9999';
+        }
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
         setFull(f => !f);
     };
     return (
-        <div style={{ position: 'absolute', top: 80, right: 10, zIndex: 1000 }}>
+        <div style={{ position: 'absolute', top: 80, left: 10, zIndex: 1000 }}>
             <button onClick={toggle} title="Toggle Fullscreen" style={{
                 background: '#fff', border: '2px solid rgba(0,0,0,0.2)', borderRadius: 4,
                 width: 30, height: 30, cursor: 'pointer', fontSize: 16,
@@ -257,7 +273,7 @@ function ShareLocation() {
         navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
     };
     return (
-        <div style={{ position: 'absolute', top: 115, right: 10, zIndex: 1000 }}>
+        <div style={{ position: 'absolute', top: 115, left: 10, zIndex: 1000 }}>
             <button onClick={share} title="Share Location" style={{
                 background: copied ? '#4caf50' : '#fff', color: copied ? '#fff' : '#000',
                 border: '2px solid rgba(0,0,0,0.2)', borderRadius: 4,
@@ -544,12 +560,11 @@ export default function MapClient() {
                 <button onClick={() => { setMeasureMode(m => !m); setRouteMode(false); setReverseGeoMode(false); }} style={btn(measureMode)}>
                     📏 Measure{measureMode ? ' (dbl-click end)' : ''}
                 </button>
-                <button onClick={() => setShowHeatmap(m => !m)} style={btn(showHeatmap)}>🔥 Heatmap</button>
+
                 <button onClick={() => setShowClusters(m => !m)} style={btn(showClusters)}>📍 Clusters</button>
                 <button onClick={() => setShowMiniMap(m => !m)} style={btn(showMiniMap)}>🗾 Mini Map</button>
                 <button onClick={() => { setZoomFit(true); setTimeout(() => setZoomFit(false), 300); }} style={btn()}>🔭 Zoom Fit</button>
-                <button onClick={() => saveDrawings(featureGroupRef.current)} style={btn()}>💾 Save</button>
-                <button onClick={() => loadDrawings(featureGroupRef.current)} style={btn()}>📂 Load</button>
+
                 <button onClick={() => exportGeoJSON(featureGroupRef.current)} style={btn()}>📤 Export GeoJSON</button>
                 <button onClick={() => geoImportRef.current?.click()} style={btn()}>📥 Import GeoJSON</button>
                 <input ref={geoImportRef} type="file" accept=".geojson,.json" style={{ display: 'none' }}
