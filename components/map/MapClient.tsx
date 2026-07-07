@@ -406,8 +406,16 @@ export default function MapClient() {
 
     const handleSaveCurrentLocation = async () => {
         if (!userCoords) return;
+        let label = `${userCoords[0].toFixed(5)}, ${userCoords[1].toFixed(5)}`;
         try {
-            const result = await saveLocation({ latitude: userCoords[0], longitude: userCoords[1] }).unwrap();
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${userCoords[0]}&lon=${userCoords[1]}&format=json`);
+            const data = await res.json();
+            if (data.display_name) label = data.display_name;
+        } catch { /* fallback to coords */ }
+        const confirmed = window.confirm(`Do you want to save this location?\n${label}`);
+        if (!confirmed) return;
+        try {
+            const result = await saveLocation({ latitude: userCoords[0], longitude: userCoords[1], label }).unwrap();
             setCurrentShareToken(result.data?.shareToken ?? null);
             alert('✅ Current location saved!');
         } catch {
@@ -513,7 +521,7 @@ export default function MapClient() {
     });
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--navbar-height, 64px))', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--navbar-height, 64px))', overflow: 'hidden', padding: '5px', margin: '0px', marginTop: 'calc(-1 * var(--navbar-height, 64px))' }}>
             <h1>Map Page</h1>
 
             {/* ── Original search/action bar ── */}
