@@ -395,6 +395,7 @@ export default function MapClient() {
     const [drawnPolygon, setDrawnPolygon] = useState<[number, number][] | null>(null);
     const [clickedMarker, setClickedMarker] = useState<[number, number] | null>(null);
     const [clickedShareToken, setClickedShareToken] = useState<string | null>(null);
+    const [searchShareToken, setSearchShareToken] = useState<string | null>(null);
     const [currentShareToken, setCurrentShareToken] = useState<string | null>(null);
     const [saveLocation, { isLoading: isSaving }] = useSaveLocationMutation();
 
@@ -432,6 +433,18 @@ export default function MapClient() {
         }
     };
 
+    const handleSaveSearchLocation = async (pos: [number, number], label: string) => {
+        const confirmed = window.confirm(`Do you want to save this location?\n${label}`);
+        if (!confirmed) return;
+        try {
+            const result = await saveLocation({ latitude: pos[0], longitude: pos[1], label }).unwrap();
+            setSearchShareToken(result.data?.shareToken ?? null);
+            alert('✅ Location saved!');
+        } catch {
+            alert('❌ Failed to save location');
+        }
+    };
+
     useEffect(() => {
         import('leaflet').then((L) => {
             setMarkerIcon(new L.Icon({
@@ -460,6 +473,7 @@ export default function MapClient() {
         setFlyTo(coords); setSearchMarker(coords);
         setSearchQuery(item.display_name.split(',')[0]);
         setShowDropdown(false); setSuggestions([]);
+        setSearchShareToken(null);
     };
 
     const handleLocationSearch = async () => {
@@ -621,7 +635,26 @@ export default function MapClient() {
                             </Popup>
                         </Marker>
                     )}
-                    {markerIcon && searchMarker && <Marker position={searchMarker} icon={markerIcon}><Popup>🔍 {searchQuery}</Popup></Marker>}
+                    {markerIcon && searchMarker && (
+                        <Marker position={searchMarker} icon={markerIcon}>
+                            <Popup>
+                                <div style={{ textAlign: 'center', minWidth: 160 }}>
+                                    <div style={{ marginBottom: 6, fontSize: 12 }}>🔍 {searchQuery}</div>
+                                    <button
+                                        onClick={() => handleSaveSearchLocation(searchMarker, searchQuery)}
+                                        disabled={isSaving}
+                                        style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#1677ff', color: '#fff', border: 'none', borderRadius: 4 }}
+                                    >💾 {isSaving ? 'Saving...' : 'Save this location'}</button>
+                                    {searchShareToken && (
+                                        <button
+                                            onClick={() => copyShareLink(searchShareToken)}
+                                            style={{ marginTop: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#52c41a', color: '#fff', border: 'none', borderRadius: 4, display: 'block', width: '100%' }}
+                                        >🔗 Share this location</button>
+                                    )}
+                                </div>
+                            </Popup>
+                        </Marker>
+                    )}
 
                     {showClusters && markerIcon && (
                         <MarkerClusterGroup>
