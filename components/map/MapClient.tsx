@@ -378,12 +378,20 @@ export default function MapClient() {
     const [zoomFit, setZoomFit] = useState(false);
     const [drawnPolygon, setDrawnPolygon] = useState<[number, number][] | null>(null);
     const [clickedMarker, setClickedMarker] = useState<[number, number] | null>(null);
+    const [clickedShareToken, setClickedShareToken] = useState<string | null>(null);
+    const [currentShareToken, setCurrentShareToken] = useState<string | null>(null);
     const [saveLocation, { isLoading: isSaving }] = useSaveLocationMutation();
+
+    const copyShareLink = (token: string) => {
+        const url = `${window.location.origin}/map/share/${token}`;
+        navigator.clipboard.writeText(url).then(() => alert('🔗 Share link copied!'));
+    };
 
     const handleSaveCurrentLocation = async () => {
         if (!userCoords) return;
         try {
-            await saveLocation({ latitude: userCoords[0], longitude: userCoords[1] }).unwrap();
+            const result = await saveLocation({ latitude: userCoords[0], longitude: userCoords[1] }).unwrap();
+            setCurrentShareToken(result.data?.shareToken ?? null);
             alert('✅ Current location saved!');
         } catch {
             alert('❌ Location save karne mein error aaya');
@@ -400,7 +408,8 @@ export default function MapClient() {
         const confirmed = window.confirm(`Do you want to save this location?\n${placeName}`);
         if (!confirmed) return;
         try {
-            await saveLocation({ latitude: pos[0], longitude: pos[1], label: placeName }).unwrap();
+            const result = await saveLocation({ latitude: pos[0], longitude: pos[1], label: placeName }).unwrap();
+            setClickedShareToken(result.data?.shareToken ?? null);
             alert('✅ Location saved!');
         } catch {
             alert('❌ Failed to save location');
@@ -509,6 +518,13 @@ export default function MapClient() {
                     title={!userCoords ? 'Pehle My Location click karo' : 'Current location save karo'}
                     style={{ ...btn(), opacity: !userCoords ? 0.4 : 1, cursor: !userCoords ? 'not-allowed' : 'pointer' }}
                 >💾 {isSaving ? 'Saving...' : 'Save Location'}</button>
+                {currentShareToken && (
+                    <button
+                        onClick={() => copyShareLink(currentShareToken)}
+                        style={btn()}
+                        title="Share current location link"
+                    >🔗 Share My Location</button>
+                )}
                 {locError && <span style={{ color: 'red', fontSize: '12px' }}>{locError}</span>}
                 <button onClick={handleDownload} style={btn()}>⬇️ Download</button>
                 <button onClick={handlePrint} style={btn()}>🖨️ Print</button>
@@ -580,6 +596,12 @@ export default function MapClient() {
                                         disabled={isSaving}
                                         style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#1677ff', color: '#fff', border: 'none', borderRadius: 4 }}
                                     >💾 {isSaving ? 'Saving...' : 'Save this location'}</button>
+                                    {clickedShareToken && (
+                                        <button
+                                            onClick={() => copyShareLink(clickedShareToken)}
+                                            style={{ marginTop: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#52c41a', color: '#fff', border: 'none', borderRadius: 4, display: 'block', width: '100%' }}
+                                        >🔗 Share this location</button>
+                                    )}
                                 </div>
                             </Popup>
                         </Marker>
