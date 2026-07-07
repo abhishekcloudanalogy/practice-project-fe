@@ -429,12 +429,12 @@ export default function MapClient() {
     });
 
     return (
-        <div>
+        <div className="flex flex-col h-screen">
             <h1>Map Page</h1>
 
             {/* ── Original search/action bar ── */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', position: 'relative', flexWrap: 'wrap' }}>
-                <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
+            <div className="flex flex-wrap gap-2 mb-2 relative">
+                <div className="relative flex-1 min-w-[200px]">
                     <input type="text" placeholder="Search city..." value={searchQuery}
                         onChange={(e) => { setSearchQuery(e.target.value); setShowDropdown(true); }}
                         onFocus={() => setShowDropdown(true)}
@@ -464,7 +464,7 @@ export default function MapClient() {
             </div>
 
             {/* ── Feature toolbar ── */}
-            <div style={{ display: 'flex', gap: '6px', marginBottom: '8px', flexWrap: 'wrap' }}>
+            <div className="flex flex-wrap gap-1.5 mb-2">
                 <select value={tileLayer} onChange={e => setTileLayer(e.target.value as keyof typeof TILE_LAYERS)} style={{ ...btn(), padding: '6px 8px' }}>
                     {Object.keys(TILE_LAYERS).map(k => <option key={k} value={k}>🗺 {k}</option>)}
                 </select>
@@ -489,8 +489,8 @@ export default function MapClient() {
                     onChange={e => { if (e.target.files?.[0]) importGeoJSON(e.target.files[0], featureGroupRef.current); }} />
             </div>
 
-            <div ref={mapContainerRef} style={{ position: 'relative' }}>
-                <MapContainer center={center} zoom={Zoom_LEVEL} ref={mapRef} style={{ height: '600px', width: '100%' }}>
+            <div ref={mapContainerRef} className="relative flex-1">
+                <MapContainer center={center} zoom={Zoom_LEVEL} ref={mapRef} style={{ height: '100%', width: '100%' }}>
                     <TileLayer url={TILE_LAYERS[tileLayer].url} attribution={TILE_LAYERS[tileLayer].attribution} />
 
                     <FlyToLocation position={flyTo} />
