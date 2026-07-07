@@ -30,6 +30,12 @@ const CLUSTER_MARKERS: [number, number, string][] = [
 
 // ─── Inner components (safe — only rendered inside MapContainer) ──────────────
 
+function InvalidateSize() {
+    const map = useMap();
+    useEffect(() => { setTimeout(() => map.invalidateSize(), 0); }, [map]);
+    return null;
+}
+
 function FlyToLocation({ position }: { position: [number, number] | null }) {
     const map = useMap();
     useEffect(() => { if (position) map.flyTo(position, 13); }, [position, map]);
@@ -429,7 +435,7 @@ export default function MapClient() {
     });
 
     return (
-        <div className="flex flex-col h-screen">
+        <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--navbar-height, 64px))', overflow: 'hidden' }}>
             <h1>Map Page</h1>
 
             {/* ── Original search/action bar ── */}
@@ -489,10 +495,11 @@ export default function MapClient() {
                     onChange={e => { if (e.target.files?.[0]) importGeoJSON(e.target.files[0], featureGroupRef.current); }} />
             </div>
 
-            <div ref={mapContainerRef} className="relative flex-1">
+            <div ref={mapContainerRef} style={{ position: 'relative', flex: 1, minHeight: 0 }}>
                 <MapContainer center={center} zoom={Zoom_LEVEL} ref={mapRef} style={{ height: '100%', width: '100%' }}>
                     <TileLayer url={TILE_LAYERS[tileLayer].url} attribution={TILE_LAYERS[tileLayer].attribution} />
 
+                    <InvalidateSize />
                     <FlyToLocation position={flyTo} />
                     <MouseCoords />
                     <ReverseGeocode enabled={reverseGeoMode} />
