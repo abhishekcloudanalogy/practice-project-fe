@@ -72,6 +72,10 @@ const ROUTE_ACCESS: RouteAccessRule[] = [
     path: "/quote",
     allowedRoles: [ROLES.USER, ROLES.ADMIN, ROLES.SUPER_ADMIN],
   },
+  {
+    path: "/map",
+    allowedRoles: [ROLES.USER, ROLES.ADMIN, ROLES.SUPER_ADMIN],
+  },
 ];
 
 function getRoleFromToken(token: unknown): Role | undefined {
@@ -147,5 +151,6 @@ export const config = {
     "/customer/:path*",
     "/opportunity/:path*",
     "/quote/:path*",
+    "/map/:path*",
   ],
 };

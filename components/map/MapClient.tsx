@@ -419,7 +419,7 @@ export default function MapClient() {
             setCurrentShareToken(result.data?.shareToken ?? null);
             alert('✅ Current location saved!');
         } catch {
-            alert('❌ Location save karne mein error aaya');
+            alert('❌ Failed to save location');    
         }
     };
 
