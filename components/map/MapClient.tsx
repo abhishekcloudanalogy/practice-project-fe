@@ -549,7 +549,7 @@ export default function MapClient() {
 
             {/* ── Original search/action bar ── */}
             <div className="flex flex-wrap gap-2 mb-2 relative">
-                <div className="relative flex-1 min-w-[200px]">
+                <div className="relative flex-1 min-w-50">
                     <input type="text" placeholder="Search city..." value={searchQuery}
                         onChange={(e) => { setSearchQuery(e.target.value); setShowDropdown(true); }}
                         onFocus={() => setShowDropdown(true)}
