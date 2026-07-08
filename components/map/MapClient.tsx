@@ -253,9 +253,14 @@ function MiniMap() {
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mini);
             miniMapRef.current = mini;
             const rect = L.rectangle(map.getBounds(), { color: '#3388ff', weight: 2, fillOpacity: 0.1 }).addTo(mini);
-            const sync = () => { mini.setView(map.getCenter(), Math.max(map.getZoom() - 5, 1)); rect.setBounds(map.getBounds()); };
+            const sync = () => {
+                if (destroyed) return;
+                mini.setView(map.getCenter(), Math.max(map.getZoom() - 5, 1));
+                rect.setBounds(map.getBounds());
+            };
             sync();
             map.on('moveend zoomend', sync);
+            return () => { map.off('moveend zoomend', sync); };
         });
         return () => {
             destroyed = true;
@@ -285,10 +290,10 @@ function ShareLocation() {
     );
 }
 
-function MapClickHandler({ enabled, onClick }: { enabled: boolean; onClick: (pos: [number, number]) => void }) {
+function MapClickHandler({ enabledRef, onClick }: { enabledRef: React.MutableRefObject<boolean>; onClick: (pos: [number, number]) => void }) {
     useMapEvents({
         click(e) {
-            if (enabled) onClick([e.latlng.lat, e.latlng.lng]);
+            if (enabledRef.current) onClick([e.latlng.lat, e.latlng.lng]);
         }
     });
     return null;
@@ -371,6 +376,7 @@ function importGeoJSON(file: File, fg: FGType | null) {
 
 // ─── Main exported component ──────────────────────────────────────────────────
 export default function MapClient() {
+    const [toolbarOpen, setToolbarOpen] = useState(false);
     const [center] = useState<[number, number]>([28.6139, 77.2090]);
     const [markerIcon, setMarkerIcon] = useState<Icon | null>(null);
     const [flyTo, setFlyTo] = useState<[number, number] | null>(null);
@@ -393,6 +399,8 @@ export default function MapClient() {
     const [measureMode, setMeasureMode] = useState(false);
     const [showMiniMap, setShowMiniMap] = useState(false);
     const [zoomFit, setZoomFit] = useState(false);
+    const isDrawingShapeRef = useRef(false);
+    const mapClickEnabledRef = useRef(true);
     const [drawnPolygon, setDrawnPolygon] = useState<[number, number][] | null>(null);
     const [clickedMarker, setClickedMarker] = useState<[number, number] | null>(null);
     const [clickedShareToken, setClickedShareToken] = useState<string | null>(null);
@@ -422,7 +430,7 @@ export default function MapClient() {
             setCurrentShareToken(result.data?.shareToken ?? null);
             alert('✅ Current location saved!');
         } catch {
-            alert('❌ Failed to save location');    
+            alert('❌ Failed to save location');
         }
     };
 
@@ -457,6 +465,11 @@ export default function MapClient() {
     };
 
     useEffect(() => {
+        if (!isDrawingShapeRef.current)
+            mapClickEnabledRef.current = !reverseGeoMode && !routeMode && !measureMode;
+    }, [reverseGeoMode, routeMode, measureMode]);
+
+    useEffect(() => {
         import('leaflet').then((L) => {
             setMarkerIcon(new L.Icon({
                 iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -465,38 +478,49 @@ export default function MapClient() {
         });
         const params = new URLSearchParams(window.location.search);
         const lat = params.get('lat'), lng = params.get('lng');
-        if (lat && lng) setFlyTo([parseFloat(lat), parseFloat(lng)]);
+        if (lat && lng) {
+            const pos: [number, number] = [parseFloat(lat), parseFloat(lng)];
+            setFlyTo(pos);
+            setClickedMarker(pos);
+            fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
+                .then(r => r.json())
+                .then(d => setClickedLocationName(d.display_name || 'Unknown Location'))
+                .catch(() => setClickedLocationName('Unknown Location'));
+        }
     }, []);
 
     useEffect(() => {
-    if (!userCoords) return;
+        if (!userCoords) return;
 
-    setFlyTo([...userCoords]);
+        setFlyTo([...userCoords]);
 
-    const getAddress = async () => {
-        try {
-            const res = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?lat=${userCoords[0]}&lon=${userCoords[1]}&format=json`
-            );
+        const getAddress = async () => {
+            try {
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?lat=${userCoords[0]}&lon=${userCoords[1]}&format=json`
+                );
 
-            const data = await res.json();
+                const data = await res.json();
 
-            setCurrentLocationLabel(
-                data.display_name || "Unknown Location"
-            );
-        } catch {
-            setCurrentLocationLabel("Unknown Location");
-        }
-    };
+                setCurrentLocationLabel(
+                    data.display_name || "Unknown Location"
+                );
+            } catch {
+                setCurrentLocationLabel("Unknown Location");
+            }
+        };
 
-    getAddress();
-}, [userCoords]);
+        getAddress();
+    }, [userCoords]);
 
     useEffect(() => {
+        if (!searchQuery.trim()) { setSuggestions([]); setShowDropdown(false); return; }
         if (searchQuery.length < 2) { setSuggestions([]); return; }
         const timer = setTimeout(async () => {
             const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=6`);
-            setSuggestions(await res.json());
+            const data = await res.json();
+            setSuggestions(data);
+            setShowDropdown(data.length > 0);
         }, 300);
         return () => clearTimeout(timer);
     }, [searchQuery]);
@@ -540,31 +564,40 @@ export default function MapClient() {
     ];
 
     const btn = (active?: boolean) =>
-        `px-3 py-1.5 cursor-pointer text-xs rounded border whitespace-nowrap ${
-            active
-                ? 'bg-[#1677ff] text-white border-[#1677ff]'
-                : 'bg-white text-[#333] border-[#ccc]'
+        `px-3 py-1.5 cursor-pointer text-xs rounded border whitespace-nowrap font-medium transition-colors ${active
+            ? 'bg-[#1677ff] text-white border-[#1677ff] hover:bg-[#0958d9]'
+            : 'bg-white text-[#333] border-[#d9d9d9] hover:border-[#1677ff] hover:text-[#1677ff]'
         }`;
 
-    return (
-        <div className="flex flex-col overflow-hidden p-1.25 m-0" style={{ height: 'calc(100vh - var(--navbar-height, 64px))', marginTop: 'calc(-1 * var(--navbar-height, 64px))' }}>
-            <h1>Map Page</h1>
+    const btnLabel = (emoji: string, text: string) => (
+        <><span style={{ fontStyle: 'normal' }}>{emoji}</span>{' '}{text}</>
+    );
 
-            {/* ── Original search/action bar ── */}
-            <div className="flex flex-wrap gap-2 mb-2 relative">
-                <div className="relative flex-1 min-w-50">
+    return (
+        <div className="flex flex-col overflow-hidden" style={{ height: 'calc(100vh - var(--navbar-height, 64px))' }}>
+
+            {/* ── Page title ── */}
+            <div className="px-3 pt-2 pb-0">
+                <h1 className="text-base font-semibold text-slate-700">🗺 Map</h1>
+            </div>
+
+            {/* ── Search / action bar ── */}
+            <div className="flex flex-wrap items-center gap-2 p-2 bg-white border-b border-[#e0e0e0] relative">
+                <div className="relative flex-1 min-w-40">
                     <input type="text" placeholder="Search city..." value={searchQuery}
                         onChange={(e) => { setSearchQuery(e.target.value); setShowDropdown(true); }}
-                        onFocus={() => setShowDropdown(true)}
+                        onFocus={() => { if (suggestions.length > 0) setShowDropdown(true); }}
+                        onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
                         onKeyDown={(e) => e.key === 'Enter' && handleLocationSearch()}
-                        className="w-full p-2 text-sm box-border"
+                        className="w-full px-3 py-1.5 text-sm border border-[#d9d9d9] rounded outline-none focus:border-[#1677ff] focus:ring-1 focus:ring-[#1677ff] box-border transition-colors"
                     />
                     {showDropdown && suggestions.length > 0 && (
-                        <ul className="absolute top-full left-0 right-0 bg-white border border-[#ccc] list-none m-0 p-0 z-1000 max-h-50 overflow-y-auto">
+                        <ul className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white border border-[#d9d9d9] list-none m-0 p-0 z-9999 max-h-52 overflow-y-auto shadow-lg rounded-md">
                             {suggestions.map((item, i) => (
-                                <li key={i} onClick={() => handleCitySelect(item)}
-                                    className="p-2 cursor-pointer border-b border-[#eee] hover:bg-[#f0f0f0]">
-                                    {item.display_name}
+                                <li key={i}
+                                    onMouseDown={(e) => { e.preventDefault(); handleCitySelect(item); }}
+                                    className="px-3 py-2 cursor-pointer text-sm text-[#333] hover:bg-[#e6f4ff] hover:text-[#1677ff] border-b border-[#f0f0f0] last:border-b-0 transition-colors">
+                                    <span className="text-[#999] mr-1.5">📍</span>{item.display_name}
                                 </li>
                             ))}
                         </ul>
@@ -577,45 +610,40 @@ export default function MapClient() {
                 <button
                     onClick={handleSaveCurrentLocation}
                     disabled={!userCoords || isSaving}
-                    title={!userCoords ? 'Pehle My Location click karo' : 'Current location save karo'}
                     className={`${btn()} ${!userCoords ? 'opacity-40 cursor-not-allowed!' : ''}`}
-                >💾 {isSaving ? 'Saving...' : 'Save Location'}</button>
-             {/*      {currentShareToken && (
-                    <button
-                        onClick={() => copyShareLink(currentShareToken)}
-                        style={btn()}
-                        title="Share current location link"
-                    >🔗 Share My Location</button>
-                )}
-                    */}
+                >💾 {isSaving ? 'Saving...' : 'Save'}</button>
                 {locError && <span className="text-red-500 text-xs">{locError}</span>}
                 <button onClick={() => router.push('/map/saved')} className={btn()}>📋 See Saved Locations</button>
-                <button onClick={handleDownload} className={btn()}>⬇️ Download</button>
-                <button onClick={handlePrint} className={btn()}>🖨️ Print</button>
+                <button onClick={handleDownload} className={btn()}>⬇️</button>
+                <button onClick={handlePrint} className={btn()}>🖨️</button>
+                {/* Mobile toolbar toggle */}
+                <button
+                    onClick={() => setToolbarOpen(o => !o)}
+                    className={`${btn(toolbarOpen)} ml-auto sm:hidden`}
+                >⚙️ Tools</button>
             </div>
 
             {/* ── Feature toolbar ── */}
-            <div className="flex flex-wrap gap-1.5 mb-2">
+            <div className={`flex flex-wrap gap-1.5 p-2 bg-[#f8f8f8] border-b border-[#e0e0e0] ${toolbarOpen ? 'flex' : 'hidden sm:flex'
+                }`}>
                 <select value={tileLayer} onChange={e => setTileLayer(e.target.value as keyof typeof TILE_LAYERS)} className={btn()}>
                     {Object.keys(TILE_LAYERS).map(k => <option key={k} value={k}>🗺 {k}</option>)}
                 </select>
                 <button onClick={() => { setRouteMode(m => !m); setReverseGeoMode(false); setMeasureMode(false); }} className={btn(routeMode)}>
-                    🛣 Route{routeMode ? ' (click 2 pts)' : ''}
+                    {btnLabel('🛣', `Route${routeMode ? ' (2 pts)' : ''}`)}
                 </button>
                 <button onClick={() => { setReverseGeoMode(m => !m); setRouteMode(false); setMeasureMode(false); }} className={btn(reverseGeoMode)}>
-                    📌 Reverse Geo{reverseGeoMode ? ' (click map)' : ''}
+                    {btnLabel('📌', `Rev.Geo${reverseGeoMode ? ' (click)' : ''}`)}
                 </button>
                 <button onClick={() => { setMeasureMode(m => !m); setRouteMode(false); setReverseGeoMode(false); }} className={btn(measureMode)}>
-                    📏 Measure{measureMode ? ' (dbl-click end)' : ''}
+                    {btnLabel('📏', `Measure${measureMode ? ' (dbl-end)' : ''}`)}
                 </button>
-
-                <button onClick={() => setShowClusters(m => !m)} className={btn(showClusters)}>📍 Clusters</button>
-                <button onClick={() => setShowMiniMap(m => !m)} className={btn(showMiniMap)}>🗾 Mini Map</button>
-                <button onClick={() => { setZoomFit(true); setTimeout(() => setZoomFit(false), 300); }} className={btn()}>🔭 Zoom Fit</button>
-
-                <button onClick={() => exportGeoJSON(featureGroupRef.current)} className={btn()}>📤 Export GeoJSON</button>
-                <button onClick={() => geoImportRef.current?.click()} className={btn()}>📥 Import GeoJSON</button>
-                <input ref={geoImportRef} type="file" accept=".geojson,.json" style={{ display: 'none' }}
+                <button onClick={() => setShowClusters(m => !m)} className={btn(showClusters)}>{btnLabel('📍', 'Clusters')}</button>
+                <button onClick={() => setShowMiniMap(m => !m)} className={btn(showMiniMap)}>{btnLabel('🗾', 'Mini Map')}</button>
+                <button onClick={() => { setZoomFit(true); setTimeout(() => setZoomFit(false), 300); }} className={btn()}>{btnLabel('🔭', 'Zoom Fit')}</button>
+                <button onClick={() => exportGeoJSON(featureGroupRef.current)} className={btn()}>{btnLabel('📤', 'Export')}</button>
+                <button onClick={() => geoImportRef.current?.click()} className={btn()}>{btnLabel('📥', 'Import')}</button>
+                <input ref={geoImportRef} type="file" accept=".geojson,.json" className="hidden"
                     onChange={e => { if (e.target.files?.[0]) importGeoJSON(e.target.files[0], featureGroupRef.current); }} />
             </div>
 
@@ -626,24 +654,24 @@ export default function MapClient() {
                     <InvalidateSize />
                     <FlyToLocation position={flyTo} />
                     <MouseCoords />
-                    <MapClickHandler enabled={!reverseGeoMode && !routeMode && !measureMode}  onClick={async (pos) => {
-    setClickedMarker(pos);
-    setFlyTo(pos);
+                    <MapClickHandler enabledRef={mapClickEnabledRef} onClick={async (pos) => {
+                        setClickedMarker(pos);
+                        setFlyTo(pos);
 
-    try {
-        const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${pos[0]}&lon=${pos[1]}&format=json`
-        );
+                        try {
+                            const res = await fetch(
+                                `https://nominatim.openstreetmap.org/reverse?lat=${pos[0]}&lon=${pos[1]}&format=json`
+                            );
 
-        const data = await res.json();
+                            const data = await res.json();
 
-        setClickedLocationName(
-            data.display_name || "Unknown Location"
-        );
-    } catch {
-        setClickedLocationName("Unknown Location");
-    }
-}}/>
+                            setClickedLocationName(
+                                data.display_name || "Unknown Location"
+                            );
+                        } catch {
+                            setClickedLocationName("Unknown Location");
+                        }
+                    }} />
                     <ReverseGeocode enabled={reverseGeoMode} />
                     <RoutePlanner enabled={routeMode} />
                     <MeasureTool enabled={measureMode} />
@@ -656,13 +684,13 @@ export default function MapClient() {
 
                     {markerIcon && <Marker position={[28.6139, 77.2090]} icon={markerIcon}><Popup>New Delhi</Popup></Marker>}
                     {markerIcon && userCoords && <Marker position={userCoords} icon={markerIcon}><Popup>
-        <div className="min-w-55">
-            <div className="font-semibold mb-1.5">📍 You are here</div>
-            <div className="text-[13px] text-[#555] leading-snug">
-                {currentLocationLabel || "Loading location..."}
-            </div>
-        </div>
-    </Popup></Marker>}
+                        <div className="min-w-55">
+                            <div className="font-semibold mb-1.5">📍 You are here</div>
+                            <div className="text-[13px] text-[#555] leading-snug">
+                                {currentLocationLabel || "Loading location..."}
+                            </div>
+                        </div>
+                    </Popup></Marker>}
                     {markerIcon && clickedMarker && (
                         <Marker
                             position={clickedMarker}
@@ -683,13 +711,7 @@ export default function MapClient() {
                                         disabled={isSaving}
                                         className="px-2.5 py-1 text-xs cursor-pointer bg-[#1677ff] text-white border-none rounded"
                                     >💾 {isSaving ? 'Saving...' : 'Save this location'}</button>
-                                   {/*  {clickedShareToken && (
-                                        <button
-                                            onClick={() => copyShareLink(clickedShareToken)}
-                                            style={{ marginTop: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#52c41a', color: '#fff', border: 'none', borderRadius: 4, display: 'block', width: '100%' }}
-                                        >🔗 Share this location</button>
-                                    )}
-                                         */}
+
                                 </div>
                             </Popup>
                         </Marker>
@@ -727,6 +749,8 @@ export default function MapClient() {
                         <EditControl
                             position="topright"
                             draw={{ polyline: true, polygon: true, rectangle: true, circle: true, marker: true, circlemarker: false }}
+                            onDrawStart={() => { isDrawingShapeRef.current = true; mapClickEnabledRef.current = false; }}
+                            onDrawStop={() => { isDrawingShapeRef.current = false; mapClickEnabledRef.current = !reverseGeoMode && !routeMode && !measureMode; }}
                             onCreated={(e: any) => {
                                 const { layerType, layer } = e;
                                 if (layerType === 'polygon') {

@@ -10,11 +10,11 @@
 
 @media (max-width: 767px) {
   :root {
-    --sidebar-width: 92px; 
+    --sidebar-width: 92px;
     --navbar-height: 72px;
 
   }
- 
+
 }
 
 body {
@@ -44,7 +44,19 @@ body {
   display: none;
 }
 
-/* Keep Handsontable visual clones below the fixed dashboard header on table detail page. */
+/* Prevent leaflet-draw toolbar icons from inheriting button text color */
+.leaflet-draw-toolbar a {
+  background-color: #fff !important;
+}
+
+.leaflet-draw-toolbar a:hover {
+  background-color: #f4f4f4 !important;
+}
+
+.leaflet-draw-section {
+  border: none !important;
+}
+
 .hot-table-page .ht_clone_master,
 .hot-table-page .ht_clone_inline_start,
 .hot-table-page .ht_clone_bottom,

@@ -22,6 +22,7 @@ const APP_SHELL_SEGMENTS = new Set([
   "/contact",
   "/customer",
   "/opportunity",
+  "/map",
 ]);
 
 const isLocaleSegment = (segment: string) => /^[a-z]{2}(-[A-Z]{2})?$/.test(segment);

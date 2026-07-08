@@ -28,27 +28,26 @@ export default function SharedLocationPage() {
   }, [token]);
 
   if (error) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontSize: 18, color: 'red' }}>
+    <div className="flex items-center justify-center h-screen text-red-500 text-base px-4 text-center">
       {error}
     </div>
   );
 
   if (!location) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontSize: 16 }}>
+    <div className="flex items-center justify-center h-screen text-sm">
       Loading shared location...
     </div>
   );
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '12px 16px', background: '#1677ff', color: '#fff', fontSize: 15, fontWeight: 600 }}>
-        <div>📍 {location.label }</div>
-    <small>
-        {location.latitude.toFixed(5)},
-        {location.longitude.toFixed(5)}
-    </small>
+    <div className="flex flex-col h-screen">
+      <div className="px-4 py-3 bg-[#1677ff] text-white">
+        <div className="font-semibold text-sm sm:text-base truncate">📍 {location.label}</div>
+        <div className="text-xs opacity-80 mt-0.5">
+          {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}
+        </div>
       </div>
-      <div style={{ flex: 1 }}>
+      <div className="flex-1 min-h-0">
         <SharedMap latitude={location.latitude} longitude={location.longitude} label={location.label} />
       </div>
     </div>

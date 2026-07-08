@@ -18,6 +18,19 @@ export interface SaveLocationPayload {
   label?: string;
 }
 
+export interface SharedWithMeItem {
+  id: string;
+  createdAt: string;
+  sharedBy: { id: string; name: string | null; email: string };
+  location: SavedLocation;
+}
+
+export interface UserForSharing {
+  id: string;
+  name: string | null;
+  email: string;
+}
+
 export const mapApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     saveLocation: builder.mutation<ApiResponse<SavedLocation>, SaveLocationPayload>({
@@ -31,8 +44,25 @@ export const mapApi = baseApi.injectEndpoints({
         Array.isArray(response.data) ? response.data : [],
       providesTags: [{ type: 'SavedLocation', id: 'LIST' }],
     }),
+
+    shareLocation: builder.mutation<ApiResponse<unknown>, { locationId: string; sharedToId: string }>({
+      query: (body) => ({ url: '/api/map/share', method: 'POST', body }),
+    }),
+
+    getSharedWithMe: builder.query<SharedWithMeItem[], void>({
+      query: () => '/api/map/shared-with-me',
+      transformResponse: (response: ApiResponse<SharedWithMeItem[]>) =>
+        Array.isArray(response.data) ? response.data : [],
+      providesTags: [{ type: 'SavedLocation', id: 'SHARED' }],
+    }),
+
+    getUsersForSharing: builder.query<UserForSharing[], void>({
+      query: () => '/api/map/users-for-sharing',
+      transformResponse: (response: ApiResponse<UserForSharing[]>) =>
+        Array.isArray(response.data) ? response.data : [],
+    }),
   }),
   overrideExisting: process.env.NODE_ENV === 'development',
 });
 
-export const { useSaveLocationMutation, useGetSavedLocationsQuery } = mapApi;
+export const { useSaveLocationMutation, useGetSavedLocationsQuery, useShareLocationMutation, useGetSharedWithMeQuery, useGetUsersForSharingQuery } = mapApi;
