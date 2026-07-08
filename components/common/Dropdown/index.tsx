@@ -7,10 +7,11 @@ import { StyledDropdownWrapper } from './styles'
 import type { AppDropdownProps } from './types'
 
 const Dropdown = ({ menuItems, trigger = ['hover'], placement = 'bottomRight', children }: AppDropdownProps) => {
-  const normalizedTrigger =
+  const normalizedTrigger = (
     trigger.includes('hover') && !trigger.includes('click')
       ? ['hover', 'click']
       : trigger
+  ) as ('click' | 'contextMenu' | 'hover')[]
 
   return (
     <StyledDropdownWrapper>

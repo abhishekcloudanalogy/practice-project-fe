@@ -82,35 +82,49 @@ function ReverseGeocode({ enabled }: { enabled: boolean }) {
     return <Marker position={info.pos}><Popup>{info.address}</Popup></Marker>;
 }
 
-function RoutePlanner({ enabled }: { enabled: boolean }) {
+function RoutePlanner({ enabled, presetA, presetB }: { enabled: boolean; presetA: [number, number] | null; presetB: [number, number] | null }) {
     const [points, setPoints] = useState<[number, number][]>([]);
     const [route, setRoute] = useState<[number, number][]>([]);
     const [info, setInfo] = useState('');
     const map = useMap();
+
+    const fetchRoute = async (a: [number, number], b: [number, number]) => {
+        const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${a[1]},${a[0]};${b[1]},${b[0]}?overview=full&geometries=geojson`);
+        const data = await res.json();
+        if (data.routes?.[0]) {
+            const coords = data.routes[0].geometry.coordinates.map(([lng, lat]: number[]) => [lat, lng] as [number, number]);
+            setRoute(coords);
+            const dist = (data.routes[0].distance / 1000).toFixed(1);
+            const dur = Math.round(data.routes[0].duration / 60);
+            setInfo(`${dist} km · ~${dur} min`);
+        }
+    };
+
+    // Auto-route when enabled and both preset points are available
+    useEffect(() => {
+        if (enabled && presetA && presetB) {
+            setPoints([]);
+            fetchRoute(presetA, presetB);
+        }
+    }, [enabled, presetA, presetB]);
+
     useMapEvents({
         async click(e) {
-            if (!enabled) return;
+            if (!enabled || (presetA && presetB)) return; // skip manual clicks if preset route already shown
             const newPoints = [...points, [e.latlng.lat, e.latlng.lng] as [number, number]];
             setPoints(newPoints);
             if (newPoints.length === 2) {
-                const [a, b] = newPoints;
-                const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${a[1]},${a[0]};${b[1]},${b[0]}?overview=full&geometries=geojson`);
-                const data = await res.json();
-                if (data.routes?.[0]) {
-                    const coords = data.routes[0].geometry.coordinates.map(([lng, lat]: number[]) => [lat, lng] as [number, number]);
-                    setRoute(coords);
-                    const dist = (data.routes[0].distance / 1000).toFixed(1);
-                    const dur = Math.round(data.routes[0].duration / 60);
-                    setInfo(`${dist} km · ~${dur} min`);
-                }
+                await fetchRoute(newPoints[0], newPoints[1]);
                 setPoints([]);
             }
         }
     });
+
     useEffect(() => {
-        map.getContainer().style.cursor = enabled ? 'crosshair' : '';
+        map.getContainer().style.cursor = enabled && !(presetA && presetB) ? 'crosshair' : '';
         if (!enabled) { setRoute([]); setInfo(''); setPoints([]); }
-    }, [enabled, map]);
+    }, [enabled, presetA, presetB, map]);
+
     return (
         <>
             {route.length > 0 && <Polyline positions={route} color="blue" weight={4} />}
@@ -297,6 +311,25 @@ function MapClickHandler({ enabledRef, onClick }: { enabledRef: React.MutableRef
         }
     });
     return null;
+}
+
+function DistanceBadge({ a, b }: { a: [number, number] | null; b: [number, number] | null }) {
+    const [dist, setDist] = useState<string | null>(null);
+    useEffect(() => {
+        if (!a || !b) { setDist(null); return; }
+        import('leaflet').then((L) => {
+            const meters = L.latLng(a).distanceTo(L.latLng(b));
+            setDist(meters >= 1000 ? `${(meters / 1000).toFixed(2)} km` : `${Math.round(meters)} m`);
+        });
+    }, [a, b]);
+    if (!dist) return null;
+    return (
+        <div style={{
+            position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)',
+            zIndex: 1000, background: '#fff', padding: '6px 14px', borderRadius: 20,
+            fontWeight: 600, fontSize: 13, border: '1px solid #aaa', pointerEvents: 'none'
+        }}>📍↔️📍 {dist}</div>
+    );
 }
 
 function MeasureTool({ enabled }: { enabled: boolean }) {
@@ -673,8 +706,9 @@ export default function MapClient() {
                         }
                     }} />
                     <ReverseGeocode enabled={reverseGeoMode} />
-                    <RoutePlanner enabled={routeMode} />
+                    <RoutePlanner enabled={routeMode} presetA={userCoords} presetB={clickedMarker} />
                     <MeasureTool enabled={measureMode} />
+                    <DistanceBadge a={userCoords} b={clickedMarker} />
                     <ShareLocation />
                     <FullscreenControl />
                     {showMiniMap && <MiniMap />}

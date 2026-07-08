@@ -25,6 +25,13 @@ export interface SharedWithMeItem {
   location: SavedLocation;
 }
 
+export interface SharedByMeItem {
+  id: string;
+  createdAt: string;
+  sharedTo: { id: string; name: string | null; email: string };
+  location: SavedLocation;
+}
+
 export interface UserForSharing {
   id: string;
   name: string | null;
@@ -56,6 +63,13 @@ export const mapApi = baseApi.injectEndpoints({
       providesTags: [{ type: 'SavedLocation', id: 'SHARED' }],
     }),
 
+    getSharedByMe: builder.query<SharedByMeItem[], void>({
+      query: () => '/api/map/shared-by-me',
+      transformResponse: (response: ApiResponse<SharedByMeItem[]>) =>
+        Array.isArray(response.data) ? response.data : [],
+      providesTags: [{ type: 'SavedLocation', id: 'SHARED_BY_ME' }],
+    }),
+
     getUsersForSharing: builder.query<UserForSharing[], void>({
       query: () => '/api/map/users-for-sharing',
       transformResponse: (response: ApiResponse<UserForSharing[]>) =>
@@ -65,4 +79,4 @@ export const mapApi = baseApi.injectEndpoints({
   overrideExisting: process.env.NODE_ENV === 'development',
 });
 
-export const { useSaveLocationMutation, useGetSavedLocationsQuery, useShareLocationMutation, useGetSharedWithMeQuery, useGetUsersForSharingQuery } = mapApi;
+export const { useSaveLocationMutation, useGetSavedLocationsQuery, useShareLocationMutation, useGetSharedWithMeQuery, useGetSharedByMeQuery, useGetUsersForSharingQuery } = mapApi;

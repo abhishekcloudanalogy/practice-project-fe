@@ -75,7 +75,13 @@ export default function SavedLocationTable() {
 
   return (
     <div className="px-4 sm:px-6 pt-0 pb-6 space-y-3 m-5 ">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <Button
+          variant="primary"
+          onClick={() => router.push('/map/shared-by-me')}
+        >
+          Shared By Me
+        </Button>
         <Button
           variant="primary"
           onClick={() => router.push('/map/shared-with-me')}
@@ -112,6 +118,7 @@ export default function SavedLocationTable() {
           onChange={setSelectedUserId}
           showSearch
           optionFilterProp="label"
+          getPopupContainer={(trigger) => trigger.parentElement!}
           options={users.map((u) => ({ value: u.id, label: `${u.name || ''} (${u.email})` }))}
         />
       </Modal>
