@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { MapContainer, TileLayer, Marker, Popup, FeatureGroup, useMap, useMapEvents, Polyline } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
 import MarkerClusterGroup from 'react-leaflet-cluster';
@@ -397,6 +398,7 @@ export default function MapClient() {
     const [clickedShareToken, setClickedShareToken] = useState<string | null>(null);
     const [searchShareToken, setSearchShareToken] = useState<string | null>(null);
     const [currentShareToken, setCurrentShareToken] = useState<string | null>(null);
+    const router = useRouter();
     const [saveLocation, { isLoading: isSaving }] = useSaveLocationMutation();
     const [clickedLocationName, setClickedLocationName] = useState("");
     const [currentLocationLabel, setCurrentLocationLabel] = useState("");
@@ -537,14 +539,15 @@ export default function MapClient() {
         ...(searchMarker ? [searchMarker] : []),
     ];
 
-    const btn = (active?: boolean): React.CSSProperties => ({
-        padding: '6px 12px', cursor: 'pointer', fontSize: 12, borderRadius: 4,
-        background: active ? '#1677ff' : '#fff', color: active ? '#fff' : '#333',
-        border: `1px solid ${active ? '#1677ff' : '#ccc'}`, whiteSpace: 'nowrap'
-    });
+    const btn = (active?: boolean) =>
+        `px-3 py-1.5 cursor-pointer text-xs rounded border whitespace-nowrap ${
+            active
+                ? 'bg-[#1677ff] text-white border-[#1677ff]'
+                : 'bg-white text-[#333] border-[#ccc]'
+        }`;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--navbar-height, 64px))', overflow: 'hidden', padding: '5px', margin: '0px', marginTop: 'calc(-1 * var(--navbar-height, 64px))' }}>
+        <div className="flex flex-col overflow-hidden p-1.25 m-0" style={{ height: 'calc(100vh - var(--navbar-height, 64px))', marginTop: 'calc(-1 * var(--navbar-height, 64px))' }}>
             <h1>Map Page</h1>
 
             {/* ── Original search/action bar ── */}
@@ -554,69 +557,69 @@ export default function MapClient() {
                         onChange={(e) => { setSearchQuery(e.target.value); setShowDropdown(true); }}
                         onFocus={() => setShowDropdown(true)}
                         onKeyDown={(e) => e.key === 'Enter' && handleLocationSearch()}
-                        style={{ width: '100%', padding: '8px', fontSize: '14px', boxSizing: 'border-box' }}
+                        className="w-full p-2 text-sm box-border"
                     />
                     {showDropdown && suggestions.length > 0 && (
-                        <ul style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #ccc', listStyle: 'none', margin: 0, padding: 0, zIndex: 1000, maxHeight: '200px', overflowY: 'auto' }}>
+                        <ul className="absolute top-full left-0 right-0 bg-white border border-[#ccc] list-none m-0 p-0 z-1000 max-h-50 overflow-y-auto">
                             {suggestions.map((item, i) => (
                                 <li key={i} onClick={() => handleCitySelect(item)}
-                                    style={{ padding: '8px', cursor: 'pointer', borderBottom: '1px solid #eee' }}
-                                    onMouseEnter={e => (e.currentTarget.style.background = '#f0f0f0')}
-                                    onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+                                    className="p-2 cursor-pointer border-b border-[#eee] hover:bg-[#f0f0f0]">
                                     {item.display_name}
                                 </li>
                             ))}
                         </ul>
                     )}
                 </div>
-                <button onClick={handleLocationSearch} style={btn()}>🔍 Search</button>
-                <button onClick={() => { getLocation(); }} disabled={locLoading} style={btn()}>
+                <button onClick={handleLocationSearch} className={btn()}>🔍 Search</button>
+                <button onClick={() => { getLocation(); }} disabled={locLoading} className={btn()}>
                     {locLoading ? '⏳...' : '📍 My Location'}
                 </button>
                 <button
                     onClick={handleSaveCurrentLocation}
                     disabled={!userCoords || isSaving}
                     title={!userCoords ? 'Pehle My Location click karo' : 'Current location save karo'}
-                    style={{ ...btn(), opacity: !userCoords ? 0.4 : 1, cursor: !userCoords ? 'not-allowed' : 'pointer' }}
+                    className={`${btn()} ${!userCoords ? 'opacity-40 cursor-not-allowed!' : ''}`}
                 >💾 {isSaving ? 'Saving...' : 'Save Location'}</button>
-                {currentShareToken && (
+             {/*      {currentShareToken && (
                     <button
                         onClick={() => copyShareLink(currentShareToken)}
                         style={btn()}
                         title="Share current location link"
                     >🔗 Share My Location</button>
                 )}
-                {locError && <span style={{ color: 'red', fontSize: '12px' }}>{locError}</span>}
-                <button onClick={handleDownload} style={btn()}>⬇️ Download</button>
-                <button onClick={handlePrint} style={btn()}>🖨️ Print</button>
+                    */}
+                {locError && <span className="text-red-500 text-xs">{locError}</span>}
+                <button onClick={() => router.push('/map/saved')} className={btn()}>📋 See Saved Locations</button>
+                <button onClick={handleDownload} className={btn()}>⬇️ Download</button>
+                <button onClick={handlePrint} className={btn()}>🖨️ Print</button>
             </div>
 
             {/* ── Feature toolbar ── */}
             <div className="flex flex-wrap gap-1.5 mb-2">
-                <select value={tileLayer} onChange={e => setTileLayer(e.target.value as keyof typeof TILE_LAYERS)} style={{ ...btn(), padding: '6px 8px' }}>
+                <select value={tileLayer} onChange={e => setTileLayer(e.target.value as keyof typeof TILE_LAYERS)} className={btn()}>
                     {Object.keys(TILE_LAYERS).map(k => <option key={k} value={k}>🗺 {k}</option>)}
                 </select>
-                <button onClick={() => { setRouteMode(m => !m); setReverseGeoMode(false); setMeasureMode(false); }} style={btn(routeMode)}>
+                <button onClick={() => { setRouteMode(m => !m); setReverseGeoMode(false); setMeasureMode(false); }} className={btn(routeMode)}>
                     🛣 Route{routeMode ? ' (click 2 pts)' : ''}
                 </button>
-                <button onClick={() => { setReverseGeoMode(m => !m); setRouteMode(false); setMeasureMode(false); }} style={btn(reverseGeoMode)}>
+                <button onClick={() => { setReverseGeoMode(m => !m); setRouteMode(false); setMeasureMode(false); }} className={btn(reverseGeoMode)}>
                     📌 Reverse Geo{reverseGeoMode ? ' (click map)' : ''}
                 </button>
-                <button onClick={() => { setMeasureMode(m => !m); setRouteMode(false); setReverseGeoMode(false); }} style={btn(measureMode)}>
+                <button onClick={() => { setMeasureMode(m => !m); setRouteMode(false); setReverseGeoMode(false); }} className={btn(measureMode)}>
                     📏 Measure{measureMode ? ' (dbl-click end)' : ''}
                 </button>
 
-                <button onClick={() => setShowClusters(m => !m)} style={btn(showClusters)}>📍 Clusters</button>
-                <button onClick={() => setShowMiniMap(m => !m)} style={btn(showMiniMap)}>🗾 Mini Map</button>
-                <button onClick={() => { setZoomFit(true); setTimeout(() => setZoomFit(false), 300); }} style={btn()}>🔭 Zoom Fit</button>
+                <button onClick={() => setShowClusters(m => !m)} className={btn(showClusters)}>📍 Clusters</button>
+                <button onClick={() => setShowMiniMap(m => !m)} className={btn(showMiniMap)}>🗾 Mini Map</button>
+                <button onClick={() => { setZoomFit(true); setTimeout(() => setZoomFit(false), 300); }} className={btn()}>🔭 Zoom Fit</button>
 
-                <button onClick={() => exportGeoJSON(featureGroupRef.current)} style={btn()}>📤 Export GeoJSON</button>
-                <button onClick={() => geoImportRef.current?.click()} style={btn()}>📥 Import GeoJSON</button>
+                <button onClick={() => exportGeoJSON(featureGroupRef.current)} className={btn()}>📤 Export GeoJSON</button>
+                <button onClick={() => geoImportRef.current?.click()} className={btn()}>📥 Import GeoJSON</button>
                 <input ref={geoImportRef} type="file" accept=".geojson,.json" style={{ display: 'none' }}
                     onChange={e => { if (e.target.files?.[0]) importGeoJSON(e.target.files[0], featureGroupRef.current); }} />
             </div>
 
-            <div ref={mapContainerRef} style={{ position: 'relative', flex: 1, minHeight: 0 }}>
+            <div ref={mapContainerRef} className="relative flex-1 min-h-0">
                 <MapContainer center={center} zoom={Zoom_LEVEL} ref={mapRef} style={{ height: '100%', width: '100%' }}>
                     <TileLayer url={TILE_LAYERS[tileLayer].url} attribution={TILE_LAYERS[tileLayer].attribution} />
 
@@ -652,24 +655,10 @@ export default function MapClient() {
                     <ZoomToFit positions={allMarkerPositions} trigger={zoomFit} />
 
                     {markerIcon && <Marker position={[28.6139, 77.2090]} icon={markerIcon}><Popup>New Delhi</Popup></Marker>}
-                    {markerIcon && userCoords && <Marker position={userCoords} icon={markerIcon}>  <Popup>
-        <div style={{ minWidth: 220 }}>
-            <div
-                style={{
-                    fontWeight: 600,
-                    marginBottom: 6
-                }}
-            >
-                📍 You are here
-            </div>
-
-            <div
-                style={{
-                    fontSize: 13,
-                    color: "#555",
-                    lineHeight: 1.4
-                }}
-            >
+                    {markerIcon && userCoords && <Marker position={userCoords} icon={markerIcon}><Popup>
+        <div className="min-w-55">
+            <div className="font-semibold mb-1.5">📍 You are here</div>
+            <div className="text-[13px] text-[#555] leading-snug">
                 {currentLocationLabel || "Loading location..."}
             </div>
         </div>
@@ -687,19 +676,20 @@ export default function MapClient() {
                             }}
                         >
                             <Popup>
-                                <div style={{ textAlign: 'center', minWidth: 160 }}>
-                                    <div style={{ marginBottom: 6, fontSize: 12 }}>📍 {clickedLocationName || "Loading location..."}</div>
+                                <div className="text-center min-w-40">
+                                    <div className="mb-1.5 text-xs">📍 {clickedLocationName || "Loading location..."}</div>
                                     <button
                                         onClick={() => handleSaveClickedLocation(clickedMarker)}
                                         disabled={isSaving}
-                                        style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#1677ff', color: '#fff', border: 'none', borderRadius: 4 }}
+                                        className="px-2.5 py-1 text-xs cursor-pointer bg-[#1677ff] text-white border-none rounded"
                                     >💾 {isSaving ? 'Saving...' : 'Save this location'}</button>
-                                    {clickedShareToken && (
+                                   {/*  {clickedShareToken && (
                                         <button
                                             onClick={() => copyShareLink(clickedShareToken)}
                                             style={{ marginTop: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#52c41a', color: '#fff', border: 'none', borderRadius: 4, display: 'block', width: '100%' }}
                                         >🔗 Share this location</button>
                                     )}
+                                         */}
                                 </div>
                             </Popup>
                         </Marker>
@@ -707,17 +697,17 @@ export default function MapClient() {
                     {markerIcon && searchMarker && (
                         <Marker position={searchMarker} icon={markerIcon}>
                             <Popup>
-                                <div style={{ textAlign: 'center', minWidth: 160 }}>
-                                    <div style={{ marginBottom: 6, fontSize: 12 }}>🔍 {searchQuery}</div>
+                                <div className="text-center min-w-40">
+                                    <div className="mb-1.5 text-xs">🔍 {searchQuery}</div>
                                     <button
                                         onClick={() => handleSaveSearchLocation(searchMarker, searchQuery)}
                                         disabled={isSaving}
-                                        style={{ padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#1677ff', color: '#fff', border: 'none', borderRadius: 4 }}
+                                        className="px-2.5 py-1 text-xs cursor-pointer bg-[#1677ff] text-white border-none rounded"
                                     >💾 {isSaving ? 'Saving...' : 'Save this location'}</button>
                                     {searchShareToken && (
                                         <button
                                             onClick={() => copyShareLink(searchShareToken)}
-                                            style={{ marginTop: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', background: '#52c41a', color: '#fff', border: 'none', borderRadius: 4, display: 'block', width: '100%' }}
+                                            className="mt-1.5 px-2.5 py-1 text-xs cursor-pointer bg-[#52c41a] text-white border-none rounded block w-full"
                                         >🔗 Share this location</button>
                                     )}
                                 </div>
