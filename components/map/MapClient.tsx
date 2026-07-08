@@ -399,6 +399,7 @@ export default function MapClient() {
     const [currentShareToken, setCurrentShareToken] = useState<string | null>(null);
     const [saveLocation, { isLoading: isSaving }] = useSaveLocationMutation();
     const [clickedLocationName, setClickedLocationName] = useState("");
+    const [currentLocationLabel, setCurrentLocationLabel] = useState("");
     const copyShareLink = (token: string) => {
         const url = `${window.location.origin}/map/share/${token}`;
         navigator.clipboard.writeText(url).then(() => alert('🔗 Share link copied!'));
@@ -465,7 +466,29 @@ export default function MapClient() {
         if (lat && lng) setFlyTo([parseFloat(lat), parseFloat(lng)]);
     }, []);
 
-    useEffect(() => { if (userCoords) setFlyTo([...userCoords]); }, [userCoords]);
+    useEffect(() => {
+    if (!userCoords) return;
+
+    setFlyTo([...userCoords]);
+
+    const getAddress = async () => {
+        try {
+            const res = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?lat=${userCoords[0]}&lon=${userCoords[1]}&format=json`
+            );
+
+            const data = await res.json();
+
+            setCurrentLocationLabel(
+                data.display_name || "Unknown Location"
+            );
+        } catch {
+            setCurrentLocationLabel("Unknown Location");
+        }
+    };
+
+    getAddress();
+}, [userCoords]);
 
     useEffect(() => {
         if (searchQuery.length < 2) { setSuggestions([]); return; }
@@ -629,7 +652,28 @@ export default function MapClient() {
                     <ZoomToFit positions={allMarkerPositions} trigger={zoomFit} />
 
                     {markerIcon && <Marker position={[28.6139, 77.2090]} icon={markerIcon}><Popup>New Delhi</Popup></Marker>}
-                    {markerIcon && userCoords && <Marker position={userCoords} icon={markerIcon}><Popup>📍 You are here</Popup></Marker>}
+                    {markerIcon && userCoords && <Marker position={userCoords} icon={markerIcon}>  <Popup>
+        <div style={{ minWidth: 220 }}>
+            <div
+                style={{
+                    fontWeight: 600,
+                    marginBottom: 6
+                }}
+            >
+                📍 You are here
+            </div>
+
+            <div
+                style={{
+                    fontSize: 13,
+                    color: "#555",
+                    lineHeight: 1.4
+                }}
+            >
+                {currentLocationLabel || "Loading location..."}
+            </div>
+        </div>
+    </Popup></Marker>}
                     {markerIcon && clickedMarker && (
                         <Marker
                             position={clickedMarker}
