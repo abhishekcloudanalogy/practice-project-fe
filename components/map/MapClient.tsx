@@ -398,7 +398,7 @@ export default function MapClient() {
     const [searchShareToken, setSearchShareToken] = useState<string | null>(null);
     const [currentShareToken, setCurrentShareToken] = useState<string | null>(null);
     const [saveLocation, { isLoading: isSaving }] = useSaveLocationMutation();
-
+    const [clickedLocationName, setClickedLocationName] = useState("");
     const copyShareLink = (token: string) => {
         const url = `${window.location.origin}/map/share/${token}`;
         navigator.clipboard.writeText(url).then(() => alert('🔗 Share link copied!'));
@@ -600,7 +600,24 @@ export default function MapClient() {
                     <InvalidateSize />
                     <FlyToLocation position={flyTo} />
                     <MouseCoords />
-                    <MapClickHandler enabled={!reverseGeoMode && !routeMode && !measureMode} onClick={(pos) => { setClickedMarker(pos); setFlyTo(pos); }} />
+                    <MapClickHandler enabled={!reverseGeoMode && !routeMode && !measureMode}  onClick={async (pos) => {
+    setClickedMarker(pos);
+    setFlyTo(pos);
+
+    try {
+        const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${pos[0]}&lon=${pos[1]}&format=json`
+        );
+
+        const data = await res.json();
+
+        setClickedLocationName(
+            data.display_name || "Unknown Location"
+        );
+    } catch {
+        setClickedLocationName("Unknown Location");
+    }
+}}/>
                     <ReverseGeocode enabled={reverseGeoMode} />
                     <RoutePlanner enabled={routeMode} />
                     <MeasureTool enabled={measureMode} />
@@ -627,7 +644,7 @@ export default function MapClient() {
                         >
                             <Popup>
                                 <div style={{ textAlign: 'center', minWidth: 160 }}>
-                                    <div style={{ marginBottom: 6, fontSize: 12 }}>📍 {clickedMarker[0].toFixed(5)}, {clickedMarker[1].toFixed(5)}</div>
+                                    <div style={{ marginBottom: 6, fontSize: 12 }}>📍 {clickedLocationName || "Loading location..."}</div>
                                     <button
                                         onClick={() => handleSaveClickedLocation(clickedMarker)}
                                         disabled={isSaving}

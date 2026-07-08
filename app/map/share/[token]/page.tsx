@@ -42,7 +42,11 @@ export default function SharedLocationPage() {
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '12px 16px', background: '#1677ff', color: '#fff', fontSize: 15, fontWeight: 600 }}>
-        📍 {location.label || 'Shared Location'} — {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}
+        <div>📍 {location.label }</div>
+    <small>
+        {location.latitude.toFixed(5)},
+        {location.longitude.toFixed(5)}
+    </small>
       </div>
       <div style={{ flex: 1 }}>
         <SharedMap latitude={location.latitude} longitude={location.longitude} label={location.label} />

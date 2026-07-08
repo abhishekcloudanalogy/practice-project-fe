@@ -30,7 +30,9 @@ export default function SharedMap({ latitude, longitude, label }: Props) {
       />
       {icon && (
         <Marker position={[latitude, longitude]} icon={icon}>
-          <Popup>{label || 'Shared Location'}</Popup>
+          <Popup> <div>
+        <strong>{label || "Shared Location"}</strong>
+    </div></Popup>
         </Marker>
       )}
     </MapContainer>
