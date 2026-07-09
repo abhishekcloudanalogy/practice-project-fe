@@ -39,8 +39,8 @@ export const StyledSchedulerPage = styled.section`
 
   .scheduler-title {
     margin: 0;
-    font-size: clamp(28px, 4vw, 42px);
-    font-weight: 800;
+    font-size: clamp(25px, 4vw, 25px);
+    font-weight: 680;
     line-height: 1.08;
     color: #0f172a;
   }
@@ -83,7 +83,7 @@ export const StyledSchedulerPage = styled.section`
   .scheduler-metric__value {
     margin: 8px 0 0;
     font-size: 26px;
-    font-weight: 800;
+    font-weight: 700;
     color: #0f172a;
   }
 
@@ -131,7 +131,7 @@ export const StyledSchedulerPage = styled.section`
   .scheduler-side-title {
     margin: 0;
     font-size: 16px;
-    font-weight: 800;
+    font-weight: 700;
     color: #0f172a;
   }
 
@@ -172,7 +172,7 @@ export const StyledSchedulerPage = styled.section`
   .meeting-card__title {
     margin: 0;
     font-size: 14px;
-    font-weight: 800;
+    font-weight: 600;
     color: #0f172a;
   }
 
@@ -182,35 +182,7 @@ export const StyledSchedulerPage = styled.section`
     color: #64748b;
   }
 
-  .meeting-drawer-stack {
-    display: grid;
-    gap: 14px;
-  }
 
-  .meeting-detail-row {
-    display: grid;
-    gap: 4px;
-  }
-
-  .meeting-detail-label {
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #64748b;
-  }
-
-  .meeting-detail-value {
-    font-size: 14px;
-    line-height: 1.6;
-    color: #0f172a;
-  }
-
-  .meeting-participants {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
 
   .meeting-form-grid {
     display: grid;

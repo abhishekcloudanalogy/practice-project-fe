@@ -4,6 +4,12 @@ import type {
     ApiResponse,
 } from '../types'
 
+export type UserDirectoryEntry = {
+    id: string
+    name: string | null
+    email: string
+}
+
 export const userApi = baseApi.injectEndpoints({
     endpoints: (builder) => ({
         // ─── Get Users (Admin) ──────────────────────────────────────────────────
@@ -18,6 +24,15 @@ export const userApi = baseApi.injectEndpoints({
                           ...result.map((user) => ({ type: 'User' as const, id: user.id })),
                       ]
                     : [{ type: 'User' as const, id: 'LIST' }],
+        }),
+
+        // ─── Get User Directory (any authenticated user) ────────────────────────
+        // Lightweight id/name/email list — used for organizer/participant pickers.
+
+        getUserDirectory: builder.query<UserDirectoryEntry[], void>({
+            query: () => '/api/users/directory',
+            transformResponse: (response: ApiResponse<UserDirectoryEntry[]>) => response.data || [],
+            providesTags: [{ type: 'User' as const, id: 'DIRECTORY' }],
         }),
 
         // ─── Toggle User Active Status ──────────────────────────────────────────
@@ -68,5 +83,6 @@ export const userApi = baseApi.injectEndpoints({
 
 export const {
     useGetUsersQuery,
+    useGetUserDirectoryQuery,
     useToggleUserActiveMutation,
 } = userApi

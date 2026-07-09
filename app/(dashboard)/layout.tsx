@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import Sidebar from '@/components/layout/Sidebar'
 import { SidebarProvider } from '@/store/features/dashboard/sidebarContext'
 import DashboardHeader from '@/components/layout/DashboardHeader'
+import SchedulerSocketBridge from '@/components/scheduler/SchedulerSocketBridge'
 
 type DashboardLayoutProps = {
   children: ReactNode
@@ -20,6 +21,7 @@ export const metadata: Metadata = {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <SidebarProvider>
+      <SchedulerSocketBridge />
       <div className="min-h-[calc(100vh-var(--navbar-height))] bg-slate-50 text-slate-900">
         <DashboardHeader />
         <Sidebar />
