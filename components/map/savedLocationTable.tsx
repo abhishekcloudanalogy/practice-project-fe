@@ -75,18 +75,12 @@ export default function SavedLocationTable() {
 
   return (
     <div className="px-4 sm:px-6 pt-0 pb-6 space-y-3 m-5 ">
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end">
         <Button
           variant="primary"
-          onClick={() => router.push('/map/shared-by-me')}
+          onClick={() => router.push('/map/shared')}
         >
-          Shared By Me
-        </Button>
-        <Button
-          variant="primary"
-          onClick={() => router.push('/map/shared-with-me')}
-        >
-           Shared With Me
+          Shared
         </Button>
       </div>
       <div>
