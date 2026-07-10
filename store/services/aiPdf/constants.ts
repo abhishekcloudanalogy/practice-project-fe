@@ -39,7 +39,7 @@ export const normalizeSyncPayload = (tables: AiPdfSyncTableInput[]): AiPdfSyncPa
             : [],
         lineItemMapping: Object.fromEntries(
             Object.entries(table.lineItemMapping ?? {}).filter(
-                ([, v]) => LINE_ITEM_FIELD_KEYS.has(v)
+                ([, v]) => LINE_ITEM_FIELD_KEYS.has(v as never)
             )
         ),
     })),

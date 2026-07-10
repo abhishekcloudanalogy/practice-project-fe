@@ -16,7 +16,7 @@ export const selectDerivedLineItems = (uploadId: string) =>
       }
 
       const cleanMapping = Object.fromEntries(
-        Object.entries(mapping).filter(([, targetField]) => LINE_ITEM_FIELD_KEYS.has(targetField))
+        Object.entries(mapping).filter(([, targetField]) => LINE_ITEM_FIELD_KEYS.has(targetField as never))
       )
       const mappingEntries = Object.entries(cleanMapping)
       if (mappingEntries.length === 0) {
